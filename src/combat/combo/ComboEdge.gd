@@ -34,6 +34,14 @@ extends Resource
 ## player cannot form a reliable mental model. The validator reports them.
 @export_range(0, 100, 1) var priority: int = 0
 
+## Does taking this route keep the combo counter and its damage scaling?
+##
+## Combo semantics belong to the ROUTE, not to the cancel window that allowed it:
+## timing lives in the attack, routing lives in the graph, and "does this continue
+## the combo" is a routing question. Setting this false is how a loop is closed so
+## that one repeatable sequence cannot stay optimal forever.
+@export var preserves_combo: bool = true
+
 @export_multiline var designer_notes: String = ""
 
 

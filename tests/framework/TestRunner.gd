@@ -153,6 +153,18 @@ func _run_one(path: String, instance: TestCase, method_name: String) -> void:
 	var failures: PackedStringArray = instance._test_failures()
 	_assertions += instance._test_assertion_count()
 
+	# A test that asserted NOTHING did not pass — it aborted. GDScript runtime
+	# errors (a bad property access, a null call) terminate the calling function
+	# without propagating, so a broken test body would otherwise be reported
+	# green while having verified nothing at all. This guard turns the project's
+	# most dangerous failure mode — a silently vacuous test — into a visible one.
+	if failures.is_empty() and instance._test_assertion_count() == 0:
+		failures = PackedStringArray([
+			"made no assertions — the test body most likely aborted on a "
+			+ "runtime error (check stderr above for SCRIPT ERROR), or it is "
+			+ "missing its assertions",
+		])
+
 	if failures.is_empty():
 		_tests_passed += 1
 		print("    \u001b[32mPASS\u001b[0m %s  (%d assertion%s)" % [

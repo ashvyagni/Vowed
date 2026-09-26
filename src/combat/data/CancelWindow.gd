@@ -39,10 +39,11 @@ extends Resource
 ## combo graph, where it is visible as a graph.
 @export var allowed_attack_ids: Array[StringName] = []
 
-## If true, taking this cancel preserves the current combo counter and its
-## damage scaling. If false the cancel resets the combo — the mechanism that
-## stops a single loop from being optimal forever.
-@export var preserves_combo: bool = true
+# NOTE: combo preservation is deliberately NOT a property of a cancel window.
+# It lives on ComboEdge instead. A cancel window answers "WHEN may this attack be
+# left"; the graph edge answers "WHERE does it go, and does that continue the
+# combo". Declaring it in both places would give two sources of truth that could
+# silently disagree.
 
 
 func is_open_on(attack_frame: int) -> bool:
