@@ -12,10 +12,26 @@ live with this" is distinguishable from "we forgot about this".
 
 ## Open
 
-*None.*
+| ID | Item | Severity | Owner |
+|---|---|---|---|
+| **I1** | The headless test runner prints `3 ObjectDB instances were leaked at exit` / `2 resources still in use at exit` after a successful run. | Low | M16 |
 
-The project is at the end of M0 with a greenfield codebase. The first entries
-will arrive with the first real system.
+**I1 detail.** Investigated rather than assumed. The leaked objects are the
+**`GDScript` resources** for `ComboEdge.gd` and `ComboGraph.gd`, plus one native
+class — not leaked `ComboGraph` *instances*. Godot's script cache retains a
+script that a typed array (`Array[ComboEdge]`) refers to, and it survives to
+process exit.
+
+Bounded by the number of scripts declaring typed arrays of custom classes, not by
+runtime object count, so it is **not a runtime leak** and does not grow during
+play. Confirmed not to be the graph's lazily-built index: clearing it changes
+nothing.
+
+Deliberately **not** filtered out of the runner's output. A test command that
+strips lines matching `ERROR` would hide the next leak too, and that one might be
+real. The honest cost is two lines of noise after a green run; the alternative
+cost is a blind spot. Revisit at M16 when the full QA pass decides how test
+output should be presented.
 
 ---
 

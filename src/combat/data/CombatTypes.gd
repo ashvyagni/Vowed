@@ -153,3 +153,84 @@ static func reaction_is_airborne(kind: ReactionKind) -> bool:
 ## Whether a reaction puts the victim on the floor, forcing a wake-up.
 static func reaction_is_knockdown(kind: ReactionKind) -> bool:
 	return kind == ReactionKind.KNOCKDOWN or kind == ReactionKind.SWEEP
+
+## Directional input relative to the actor's facing (or to its lock-on target
+## when one is engaged). Combo edges condition on this, which is what turns one
+## button into several distinct attacks — the mechanism that produces a large
+## move set from a small input language without an ability bar.
+enum Direction {
+	ANY,       ## No directional requirement.
+	NEUTRAL,   ## No movement input. Distinct from ANY: it EXCLUDES directions.
+	FORWARD,   ## Toward the target when locked on, else the facing direction.
+	BACK,
+	LEFT,
+	RIGHT,
+	TOWARD,    ## Toward the target regardless of lock-on.
+	AWAY,
+}
+
+
+## The victim's state, as a condition on a follow-up route. This is what makes
+## routes *situational* rather than arbitrary button strings: a launcher follow-up
+## is legal only because the target is airborne.
+enum TargetState {
+	ANY,
+	NONE,          ## No target in range — used for whiff-punish and feint routes.
+	GROUNDED,
+	AIRBORNE,
+	STAGGERED,
+	LAUNCHED,
+	GUARDING,
+	KNOCKED_DOWN,
+	CRUMPLED,
+}
+
+
+## Human-readable direction name, for debug overlays and the move list.
+static func direction_name(direction: Direction) -> String:
+	match direction:
+		Direction.ANY:     return "any"
+		Direction.NEUTRAL: return "neutral"
+		Direction.FORWARD: return "forward"
+		Direction.BACK:    return "back"
+		Direction.LEFT:    return "left"
+		Direction.RIGHT:   return "right"
+		Direction.TOWARD:  return "toward"
+		Direction.AWAY:    return "away"
+	return "?"
+
+
+## Resolve a movement vector into a discrete direction.
+##
+## `move` is in the actor's local frame: x = right, y = forward.
+## `deadzone` below which input counts as NEUTRAL.
+##
+## Cardinal resolution uses whichever axis dominates, so a diagonal reads as the
+## direction the player most clearly intended rather than failing to match
+## anything. A combo route that silently refuses to come out on a slight diagonal
+## is indistinguishable from a bug to the person holding the controller.
+static func resolve_direction(move: Vector2, deadzone: float = 0.3) -> Direction:
+	if move.length() < deadzone:
+		return Direction.NEUTRAL
+	if absf(move.y) >= absf(move.x):
+		return Direction.FORWARD if move.y > 0.0 else Direction.BACK
+	return Direction.RIGHT if move.x > 0.0 else Direction.LEFT
+
+
+## Does an actual direction satisfy a required one?
+##
+## TOWARD and AWAY are target-relative and cannot be decided from the input
+## vector alone, so they are resolved upstream (where the target is known) into
+## FORWARD/BACK before reaching here. They are accepted as equivalent so an edge
+## authored either way behaves the same.
+static func direction_satisfies(required: Direction, actual: Direction) -> bool:
+	if required == Direction.ANY:
+		return true
+	if required == actual:
+		return true
+	if required == Direction.TOWARD and actual == Direction.FORWARD:
+		return true
+	if required == Direction.AWAY and actual == Direction.BACK:
+		return true
+	return false
+
