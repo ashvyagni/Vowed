@@ -1,0 +1,28 @@
+{
+  "$schema_version": 1,
+  "_comment": [
+    "Authoritative machine-readable asset provenance record for VOWED.",
+    "Written at acquisition time, never retroactively. See docs/ASSET_LICENSES.md.",
+    "An asset present in the project but absent here is treated as unlicensed",
+    "and must not ship. The in-game credits screen is generated from this file,",
+    "so the register and the credits cannot drift apart.",
+    "Validated by tools/validate_assets.py."
+  ],
+  "_entry_schema": {
+    "id": "stable kebab-case identifier, referenced by import scripts",
+    "name": "human-readable asset name",
+    "creator": "author or studio, as they wish to be credited",
+    "source": "distribution site name",
+    "url": "direct URL of the exact asset page whose licence was read",
+    "license": "SPDX identifier where one exists, else exact licence name",
+    "license_url": "URL of the licence terms as they stood at acquisition",
+    "acquired": "ISO-8601 date",
+    "files": ["repo-relative paths of every file from this asset"],
+    "modifications": "what was changed (retarget, rescale, reauthored materials), or 'none'",
+    "attribution_required": "boolean",
+    "attribution_text": "exact credit line to render, when required",
+    "commercial_use": "boolean — must be true to ship",
+    "notes": "anything a future reader needs, e.g. 'pack mixes licences'"
+  },
+  "assets": []
+}

@@ -1,0 +1,63 @@
+# ---------------------------------------------------------------------------
+# VOWED — version control ignore rules
+# ---------------------------------------------------------------------------
+
+# Godot 4 generated / machine-local -----------------------------------------
+.godot/
+.import/
+export.cfg
+export_presets.cfg
+*.translation
+
+# Build output ---------------------------------------------------------------
+build/
+export/
+dist/
+*.dmg
+*.app/
+*.exe
+*.pck
+*.zip
+
+# Godot Mono / C# (not currently used, guarded anyway) -----------------------
+.mono/
+data_*/
+*.csproj.user
+obj/
+bin/
+
+# macOS ----------------------------------------------------------------------
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+.Spotlight-V100
+.Trashes
+
+# Editors --------------------------------------------------------------------
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Secrets — never commit -----------------------------------------------------
+.env
+.env.*
+*.pem
+*.key
+secrets.json
+credentials.json
+
+# Scratch / temp -------------------------------------------------------------
+tmp/
+scratch/
+*.log
+*.tmp
+profile_*.json
+
+# Large source art kept outside the repo (see docs/ASSET_LICENSES.md) -------
+assets/_source/
+*.blend1
+*.blend2

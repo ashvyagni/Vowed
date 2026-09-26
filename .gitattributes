@@ -1,0 +1,29 @@
+# Normalise line endings for text-based Godot files
+*.gd            text eol=lf diff=gdscript
+*.tres          text eol=lf
+*.tscn          text eol=lf
+*.godot         text eol=lf
+*.cfg           text eol=lf
+*.json          text eol=lf
+*.md            text eol=lf
+*.sh            text eol=lf
+*.py            text eol=lf
+
+# Binary assets — never diff or merge
+*.png           binary
+*.jpg           binary
+*.webp          binary
+*.tga           binary
+*.exr           binary
+*.hdr           binary
+*.ogg           binary
+*.wav           binary
+*.mp3           binary
+*.glb           binary
+*.gltf          binary
+*.fbx           binary
+*.blend         binary
+*.ttf           binary
+*.otf           binary
+*.res           binary
+*.scn           binary
