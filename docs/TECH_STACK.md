@@ -25,7 +25,7 @@ design flaw, not a preference.
 | Dialogue | Custom data-driven graph, key-addressed for localisation | ✅ Locked |
 | Cinematics | Real-time in-engine, `AnimationPlayer`-driven sequencer | ✅ Locked |
 | Audio | Godot buses + custom adaptive music layer controller | ✅ Locked |
-| Tests | GUT (headless-runnable) | ✅ Locked |
+| Tests | **In-house headless harness** (`tests/framework/`) | ✅ Locked — see §10 |
 | Tooling | Python 3.14 for pipeline scripts, GDScript for in-editor tools | ✅ Locked |
 | VCS | Git + GitHub (`ashvyagni/Vowed`), SSH | ✅ Locked |
 | Primary dev target | macOS arm64 (Apple Silicon) | ✅ |
@@ -265,8 +265,38 @@ Custom region streamer, because Godot has no world partition (Risk R4).
 
 ## 10. Testing
 
-- **GUT** for unit and integration tests, run headless:
-  `godot --headless --path . -s addons/gut/gut_cmdln.gd`
+### 10.1 In-house harness, not GUT
+
+Tests run on a project-owned harness in `tests/framework/`:
+
+```bash
+godot --headless --path . -s tests/framework/TestRunner.gd
+godot --headless --path . -s tests/framework/TestRunner.gd -- --filter=buffer
+```
+
+Exit code 0 on pass, 1 on failure, so it drops into a pre-commit hook or CI with
+no wrapper.
+
+**This reverses the M0 decision to use GUT.** The reasoning, recorded because
+reversals should be arguable rather than silent:
+
+What this project needs to test is overwhelmingly **pure logic** — frame-data
+validity, combo-graph resolution, input-buffer windows, save migrations. That
+needs three things: discovery, assertions, and an exit code. Roughly 250 lines,
+entirely under project control.
+
+Against that, an addon carries a dependency to version-track, a licence and
+provenance record to maintain (per `ASSET_LICENSES.md` discipline), and upgrade
+risk at every Godot minor release. For this test shape the dependency costs more
+than it saves.
+
+This is not a criticism of GUT, which is good at what this project does not yet
+need: scene-tree integration fixtures, doubles and spies, parameterised tests.
+`TestCase`'s assertion surface is deliberately kept close to GUT's so that if QA
+needs those at **M16**, test bodies port largely unchanged. Revisit there.
+
+### 10.2 Coverage
+
 - Priority coverage: combat state transitions, combo graph resolution, input
   buffering, cancel windows, frame-data validity, Soul resonance
   accounting, save round-trip and migration, quest/world-state persistence,

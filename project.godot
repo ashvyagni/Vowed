@@ -85,6 +85,15 @@ occlusion_culling/use_occlusion_culling=true
 3d_physics/layer_16="reserved_16"
 
 ; --------------------------------------------------------------------------
+; Autoload order matters. GameEvents has no dependencies; CombatClock emits the
+; tick that everything else hangs off, so it must exist before any actor.
+; --------------------------------------------------------------------------
+[autoload]
+
+GameEvents="*res://src/core/autoload/GameEvents.gd"
+CombatClock="*res://src/core/autoload/CombatClock.gd"
+
+; --------------------------------------------------------------------------
 ; GENERATED SECTION — do not hand-edit.
 ; Regenerate with:  godot --headless --path . -s tools/generate_input_map.gd
 ; The readable binding table lives in that script.

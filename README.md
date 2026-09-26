@@ -89,19 +89,40 @@ content into `src/` is a defect even if it works.
 
 ## Running the project
 
-Requires Godot 4.7.2+ on `PATH`.
+Requires Godot 4.7.2+ on `PATH` (`brew install --cask godot`) and Python 3.
 
-Open in the editor:
-
-```bash
-godot --editor --path .
-```
-
-Run the game:
+### First-time setup after cloning
 
 ```bash
-godot --path .
+tools/import.sh
 ```
+
+This is not optional. Godot registers `class_name` declarations during an editor
+filesystem scan and caches them in `.godot/`, which is machine-local and
+gitignored. A fresh clone has no registry, so every script referencing a project
+class fails with `Could not find type X in the current scope` — an error that
+looks like a code bug and is not one. Run it again whenever you add a new
+`class_name`.
+
+### Everyday commands
+
+```bash
+tools/check.sh          # full gate: import, boot self-check, tests, asset licences
+```
+
+```bash
+tools/test.sh           # test suite only  (tools/test.sh buffer to filter)
+```
+
+```bash
+godot --editor --path . # open the editor
+```
+
+```bash
+godot --path .          # run the game
+```
+
+`tools/check.sh` is the pre-commit gate and exits non-zero on any failure.
 
 Boot performs a configuration self-check (physics tick, renderer, physics
 backend, input map, collision layers) and fails loudly if a locked decision has
@@ -113,6 +134,17 @@ that script):
 ```bash
 godot --headless --path . -s tools/generate_input_map.gd
 ```
+
+### Testing
+
+Tests run headlessly on a project-owned harness in `tests/framework/` — not GUT.
+The reasoning is recorded in [docs/TECH_STACK.md](docs/TECH_STACK.md) §10.1: what
+this project needs to test is overwhelmingly pure logic (frame data, combo
+resolution, input windows, save migrations), which needs discovery, assertions
+and an exit code, and little else.
+
+Write a test by extending `TestCase`, naming the file `*_test.gd` under `tests/`,
+and naming methods `test_*`.
 
 ---
 

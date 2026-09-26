@@ -1,5 +1,9 @@
 # Normalise line endings for text-based Godot files
 *.gd            text eol=lf diff=gdscript
+# .uid files are Godot 4.4+ stable resource identifiers. They MUST be committed:
+# they are how references survive a file move or rename. Losing them breaks every
+# reference to the script.
+*.uid           text eol=lf
 *.tres          text eol=lf
 *.tscn          text eol=lf
 *.godot         text eol=lf
