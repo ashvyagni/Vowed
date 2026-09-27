@@ -7,7 +7,7 @@
 You do not equip powers. You learn them, master them, combine them, and
 eventually synchronise with them.
 
-**Status:** In development. Milestone 1 of 17.
+**Status:** In development. Milestone 1 of 17 — combat foundation playable.
 **Not released.** There is no beta, no early access and no public demo — by
 policy. The first public release will be the finished game.
 
@@ -169,7 +169,12 @@ All gameplay bindings are rebindable; gamepad is supported in parallel from
 Milestone 1 rather than retrofitted later.
 
 `F1`–`F6` drive the debug overlays: overlay, hitboxes, frame-step, pause,
-slow-motion, lab reset.
+slow-motion, lab reset. In the Combat Lab, `1`–`5` set every training dummy's
+behaviour (idle, block, parry, counter, aggressive).
+
+Running the project opens the **Combat Lab** — an isolated arena with training
+dummies, distance rings and a live frame-data readout. It exists before any real
+level because tuning combat inside a real environment is slow and confounded.
 
 ---
 

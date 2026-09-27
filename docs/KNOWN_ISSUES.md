@@ -14,13 +14,14 @@ live with this" is distinguishable from "we forgot about this".
 
 | ID | Item | Severity | Owner |
 |---|---|---|---|
-| **I1** | The headless test runner prints `3 ObjectDB instances were leaked at exit` / `2 resources still in use at exit` after a successful run. | Low | M16 |
+| **I1** | Headless runs print `N ObjectDB instances were leaked at exit` / `N resources still in use at exit` after a successful run. N grows with the number of scripts, not with runtime objects. | Low | M16 |
 
-**I1 detail.** Investigated rather than assumed. The leaked objects are the
-**`GDScript` resources** for `ComboEdge.gd` and `ComboGraph.gd`, plus one native
-class — not leaked `ComboGraph` *instances*. Godot's script cache retains a
-script that a typed array (`Array[ComboEdge]`) refers to, and it survives to
-process exit.
+**I1 detail.** Investigated rather than assumed. The leaked objects are
+**`GDScript` resources** — one per script declaring a typed array of a custom
+class (`Array[ComboEdge]` and similar) — not leaked instances of those classes.
+Godot's script cache retains such a script to process exit. The count was 3 when
+first observed and rises as more such scripts are added; it does **not** rise
+during play.
 
 Bounded by the number of scripts declaring typed arrays of custom classes, not by
 runtime object count, so it is **not a runtime leak** and does not grow during
