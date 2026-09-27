@@ -1,0 +1,39 @@
+[gd_resource type="Resource" script_class="AttackData" format=3]
+
+[ext_resource type="Script" path="res://src/combat/data/CancelWindow.gd" id="1_4rs55"]
+[ext_resource type="Script" path="res://src/combat/data/HitboxKeyframe.gd" id="2_yvtl4"]
+[ext_resource type="Script" path="res://src/combat/data/MotionKeyframe.gd" id="3_aexql"]
+[ext_resource type="Resource" path="res://data/attacks/reactions/light.tres" id="4_bwsof"]
+[ext_resource type="Resource" path="res://data/attacks/reactions/knockdown.tres" id="5_q6ctd"]
+[ext_resource type="Script" path="res://src/combat/data/AttackData.gd" id="6_w4rh0"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_v2l8w"]
+radius = 0.54
+
+[sub_resource type="Resource" id="Resource_f25yw"]
+script = ExtResource("2_yvtl4")
+first_frame = 11
+last_frame = 13
+shape = SubResource("SphereShape3D_v2l8w")
+offset = Vector3(0, 0.28, 0.85)
+
+[resource]
+script = ExtResource("6_w4rh0")
+id = &"sweep"
+display_name = "Sweep"
+animation = &"sweep"
+designer_notes = "Back+J. Low knockdown with long recovery: a read, not a poke."
+category = 2
+height = 2
+startup = 11
+recovery = 22
+hitstop = 6
+guard_hitstop = 4
+hitboxes = Array[ExtResource("2_yvtl4")]([SubResource("Resource_f25yw")])
+on_hit = ExtResource("5_q6ctd")
+on_guard = ExtResource("4_bwsof")
+damage = 11.0
+stagger_damage = 20.0
+chip_damage = 0.88
+resonance_on_hit = 1.88
+resonance_on_guard = 0.3

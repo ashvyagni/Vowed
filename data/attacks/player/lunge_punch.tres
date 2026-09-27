@@ -1,0 +1,56 @@
+[gd_resource type="Resource" script_class="AttackData" format=3]
+
+[ext_resource type="Script" path="res://src/combat/data/CancelWindow.gd" id="1_gbx02"]
+[ext_resource type="Script" path="res://src/combat/data/HitboxKeyframe.gd" id="2_4pn14"]
+[ext_resource type="Script" path="res://src/combat/data/MotionKeyframe.gd" id="3_752y4"]
+[ext_resource type="Resource" path="res://data/attacks/reactions/light.tres" id="4_wyvix"]
+[ext_resource type="Resource" path="res://data/attacks/reactions/medium.tres" id="5_jyrqs"]
+[ext_resource type="Script" path="res://src/combat/data/AttackData.gd" id="6_3g0c5"]
+
+[sub_resource type="Resource" id="Resource_8k5rc"]
+script = ExtResource("1_gbx02")
+first_frame = 13
+last_frame = 20
+requires = 1
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_omfgx"]
+radius = 0.48
+
+[sub_resource type="Resource" id="Resource_7i4jy"]
+script = ExtResource("2_4pn14")
+first_frame = 10
+last_frame = 12
+shape = SubResource("SphereShape3D_omfgx")
+offset = Vector3(0, 1.28, 1.05)
+
+[sub_resource type="Resource" id="Resource_wwe6j"]
+script = ExtResource("3_752y4")
+frame = 8
+velocity = Vector3(0, 0, 9.5)
+dampen_factor = 0.35
+
+[sub_resource type="Resource" id="Resource_vwvyc"]
+script = ExtResource("3_752y4")
+frame = 13
+mode = 2
+dampen_factor = 0.35
+
+[resource]
+script = ExtResource("6_3g0c5")
+id = &"lunge_punch"
+display_name = "Lunging Palm"
+animation = &"lunge_punch"
+designer_notes = "Forward+K. Closes distance. Authored motion, so its reach is a tunable number rather than an animation artifact."
+category = 2
+startup = 10
+recovery = 18
+hitboxes = Array[ExtResource("2_4pn14")]([SubResource("Resource_7i4jy")])
+on_hit = ExtResource("5_jyrqs")
+on_guard = ExtResource("4_wyvix")
+damage = 13.0
+stagger_damage = 18.0
+chip_damage = 1.04
+resonance_on_hit = 2.04
+resonance_on_guard = 0.3
+cancel_windows = Array[ExtResource("1_gbx02")]([SubResource("Resource_8k5rc")])
+motion = Array[ExtResource("3_752y4")]([SubResource("Resource_wwe6j"), SubResource("Resource_vwvyc")])

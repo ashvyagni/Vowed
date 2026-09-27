@@ -1,0 +1,62 @@
+[gd_resource type="Resource" script_class="AttackData" format=3]
+
+[ext_resource type="Script" path="res://src/combat/data/CancelWindow.gd" id="1_l2u1p"]
+[ext_resource type="Script" path="res://src/combat/data/HitboxKeyframe.gd" id="2_va62r"]
+[ext_resource type="Script" path="res://src/combat/data/MotionKeyframe.gd" id="3_rm57f"]
+[ext_resource type="Resource" path="res://data/attacks/reactions/light.tres" id="4_co8vh"]
+[ext_resource type="Resource" path="res://data/attacks/reactions/heavy.tres" id="5_wu284"]
+[ext_resource type="Script" path="res://src/combat/data/AttackData.gd" id="6_xhpjb"]
+
+[sub_resource type="Resource" id="Resource_85ap0"]
+script = ExtResource("1_l2u1p")
+first_frame = 12
+last_frame = 21
+requires = 1
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_omgvo"]
+radius = 0.52
+
+[sub_resource type="Resource" id="Resource_ilx3d"]
+script = ExtResource("2_va62r")
+first_frame = 9
+last_frame = 10
+shape = SubResource("SphereShape3D_omgvo")
+offset = Vector3(0.3, 1.05, 0.8)
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_hlrn3"]
+radius = 0.52
+
+[sub_resource type="Resource" id="Resource_pue7e"]
+script = ExtResource("2_va62r")
+first_frame = 11
+last_frame = 11
+shape = SubResource("SphereShape3D_hlrn3")
+offset = Vector3(-0.3, 1.05, 0.8)
+
+[sub_resource type="Resource" id="Resource_uepks"]
+script = ExtResource("3_rm57f")
+frame = 9
+velocity = Vector3(0, 0, 2.6)
+dampen_factor = 0.35
+
+[resource]
+script = ExtResource("6_xhpjb")
+id = &"roundhouse"
+display_name = "Roundhouse"
+animation = &"roundhouse"
+designer_notes = "Big reward, 19f recovery. Whiffing it is a full punish."
+category = 1
+startup = 9
+recovery = 19
+hitstop = 6
+guard_hitstop = 4
+hitboxes = Array[ExtResource("2_va62r")]([SubResource("Resource_ilx3d"), SubResource("Resource_pue7e")])
+on_hit = ExtResource("5_wu284")
+on_guard = ExtResource("4_co8vh")
+damage = 16.0
+stagger_damage = 22.0
+chip_damage = 1.28
+resonance_on_hit = 2.2800000000000002
+resonance_on_guard = 0.3
+cancel_windows = Array[ExtResource("1_l2u1p")]([SubResource("Resource_85ap0")])
+motion = Array[ExtResource("3_rm57f")]([SubResource("Resource_uepks")])

@@ -1,0 +1,44 @@
+[gd_resource type="Resource" script_class="AttackData" format=3]
+
+[ext_resource type="Script" path="res://src/combat/data/CancelWindow.gd" id="1_h63rm"]
+[ext_resource type="Script" path="res://src/combat/data/HitboxKeyframe.gd" id="2_8cyv5"]
+[ext_resource type="Script" path="res://src/combat/data/MotionKeyframe.gd" id="3_jcxcd"]
+[ext_resource type="Resource" path="res://data/attacks/reactions/light.tres" id="4_kr3uy"]
+[ext_resource type="Script" path="res://src/combat/data/AttackData.gd" id="5_j3x6s"]
+
+[sub_resource type="Resource" id="Resource_p70qe"]
+script = ExtResource("1_h63rm")
+cancel_into = 11
+first_frame = 6
+last_frame = 13
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_5p41i"]
+radius = 0.42
+
+[sub_resource type="Resource" id="Resource_arpjo"]
+script = ExtResource("2_8cyv5")
+first_frame = 4
+last_frame = 5
+shape = SubResource("SphereShape3D_5p41i")
+offset = Vector3(0.18, 1.32, 0.72)
+
+[resource]
+script = ExtResource("5_j3x6s")
+id = &"jab_1"
+display_name = "Jab"
+animation = &"jab_1"
+designer_notes = "Fastest option. 4f startup keeps it reactable but barely. Safe on block; the tool for contesting neutral."
+startup = 4
+active = 2
+recovery = 8
+hitstop = 3
+guard_hitstop = 1
+hitboxes = Array[ExtResource("2_8cyv5")]([SubResource("Resource_arpjo")])
+on_hit = ExtResource("4_kr3uy")
+on_guard = ExtResource("4_kr3uy")
+damage = 6.0
+stagger_damage = 8.0
+chip_damage = 0.48
+resonance_on_hit = 1.48
+resonance_on_guard = 0.3
+cancel_windows = Array[ExtResource("1_h63rm")]([SubResource("Resource_p70qe")])

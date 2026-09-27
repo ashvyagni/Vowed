@@ -1,0 +1,196 @@
+[gd_resource type="Resource" script_class="ComboGraph" format=3]
+
+[ext_resource type="Script" path="res://src/combat/combo/ComboEdge.gd" id="1_0w2wo"]
+[ext_resource type="Script" path="res://src/combat/combo/ComboGraph.gd" id="2_ueaqd"]
+
+[sub_resource type="Resource" id="Resource_31m88"]
+script = ExtResource("1_0w2wo")
+to = &"jab_1"
+require_stance = 0
+require_direction = 1
+
+[sub_resource type="Resource" id="Resource_0dxls"]
+script = ExtResource("1_0w2wo")
+to = &"low_kick"
+action = 1
+require_stance = 0
+require_direction = 1
+
+[sub_resource type="Resource" id="Resource_2k0e3"]
+script = ExtResource("1_0w2wo")
+to = &"lunge_punch"
+priority = 5
+require_stance = 0
+require_direction = 2
+
+[sub_resource type="Resource" id="Resource_ujtvq"]
+script = ExtResource("1_0w2wo")
+to = &"sweep"
+action = 1
+priority = 5
+require_stance = 0
+require_direction = 3
+
+[sub_resource type="Resource" id="Resource_t150w"]
+script = ExtResource("1_0w2wo")
+to = &"spin_kick"
+action = 1
+priority = 5
+require_stance = 0
+require_direction = 2
+
+[sub_resource type="Resource" id="Resource_a8rin"]
+script = ExtResource("1_0w2wo")
+to = &"uppercut"
+priority = 6
+require_stance = 0
+require_direction = 3
+
+[sub_resource type="Resource" id="Resource_rntqh"]
+script = ExtResource("1_0w2wo")
+from = &"jab_1"
+to = &"jab_2"
+require_stance = 0
+
+[sub_resource type="Resource" id="Resource_s5g2e"]
+script = ExtResource("1_0w2wo")
+from = &"jab_2"
+to = &"straight"
+require_stance = 0
+
+[sub_resource type="Resource" id="Resource_koymx"]
+script = ExtResource("1_0w2wo")
+from = &"jab_1"
+to = &"low_kick"
+action = 1
+require_stance = 0
+
+[sub_resource type="Resource" id="Resource_raoul"]
+script = ExtResource("1_0w2wo")
+from = &"jab_2"
+to = &"spin_kick"
+action = 1
+require_stance = 0
+
+[sub_resource type="Resource" id="Resource_rqoaf"]
+script = ExtResource("1_0w2wo")
+from = &"straight"
+to = &"axe_kick"
+action = 1
+priority = 2
+require_stance = 0
+
+[sub_resource type="Resource" id="Resource_f5k2b"]
+script = ExtResource("1_0w2wo")
+from = &"low_kick"
+to = &"roundhouse"
+action = 1
+require_stance = 0
+
+[sub_resource type="Resource" id="Resource_sjnxn"]
+script = ExtResource("1_0w2wo")
+from = &"low_kick"
+to = &"jab_1"
+require_stance = 0
+
+[sub_resource type="Resource" id="Resource_8w4dg"]
+script = ExtResource("1_0w2wo")
+from = &"roundhouse"
+to = &"axe_kick"
+action = 1
+priority = 2
+require_stance = 0
+
+[sub_resource type="Resource" id="Resource_rpc48"]
+script = ExtResource("1_0w2wo")
+from = &"spin_kick"
+to = &"roundhouse"
+action = 1
+require_stance = 0
+
+[sub_resource type="Resource" id="Resource_em3dp"]
+script = ExtResource("1_0w2wo")
+from = &"spin_kick"
+to = &"straight"
+require_stance = 0
+
+[sub_resource type="Resource" id="Resource_a8e0l"]
+script = ExtResource("1_0w2wo")
+from = &"jab_2"
+to = &"uppercut"
+priority = 4
+require_stance = 0
+require_direction = 3
+require_contact = 1
+
+[sub_resource type="Resource" id="Resource_8s8bk"]
+script = ExtResource("1_0w2wo")
+from = &"low_kick"
+to = &"uppercut"
+priority = 4
+require_stance = 0
+require_direction = 3
+require_contact = 1
+
+[sub_resource type="Resource" id="Resource_nx1qn"]
+script = ExtResource("1_0w2wo")
+to = &"air_punch"
+require_stance = 1
+
+[sub_resource type="Resource" id="Resource_v10ox"]
+script = ExtResource("1_0w2wo")
+to = &"air_kick"
+action = 1
+require_stance = 1
+
+[sub_resource type="Resource" id="Resource_ywqa0"]
+script = ExtResource("1_0w2wo")
+to = &"dive_kick"
+action = 1
+priority = 5
+require_stance = 1
+require_direction = 2
+
+[sub_resource type="Resource" id="Resource_tat8r"]
+script = ExtResource("1_0w2wo")
+from = &"air_punch"
+to = &"air_kick"
+action = 1
+require_stance = 1
+
+[sub_resource type="Resource" id="Resource_41swf"]
+script = ExtResource("1_0w2wo")
+from = &"air_punch"
+to = &"air_punch"
+require_stance = 1
+max_combo_length = 6
+
+[sub_resource type="Resource" id="Resource_30ogb"]
+script = ExtResource("1_0w2wo")
+from = &"air_kick"
+to = &"dive_kick"
+action = 1
+priority = 3
+require_stance = 1
+require_target_state = 5
+
+[sub_resource type="Resource" id="Resource_sg3ci"]
+script = ExtResource("1_0w2wo")
+to = &"dash_punch"
+priority = 8
+require_stance = 0
+max_frames_since_dash = 24
+
+[sub_resource type="Resource" id="Resource_lr3wq"]
+script = ExtResource("1_0w2wo")
+to = &"dash_kick"
+action = 1
+priority = 8
+require_stance = 0
+max_frames_since_dash = 24
+
+[resource]
+script = ExtResource("2_ueaqd")
+id = &"player_base"
+display_name = "Player — base routes"
+edges = Array[ExtResource("1_0w2wo")]([SubResource("Resource_31m88"), SubResource("Resource_0dxls"), SubResource("Resource_2k0e3"), SubResource("Resource_ujtvq"), SubResource("Resource_t150w"), SubResource("Resource_a8rin"), SubResource("Resource_rntqh"), SubResource("Resource_s5g2e"), SubResource("Resource_koymx"), SubResource("Resource_raoul"), SubResource("Resource_rqoaf"), SubResource("Resource_f5k2b"), SubResource("Resource_sjnxn"), SubResource("Resource_8w4dg"), SubResource("Resource_rpc48"), SubResource("Resource_em3dp"), SubResource("Resource_a8e0l"), SubResource("Resource_8s8bk"), SubResource("Resource_nx1qn"), SubResource("Resource_v10ox"), SubResource("Resource_ywqa0"), SubResource("Resource_tat8r"), SubResource("Resource_41swf"), SubResource("Resource_30ogb"), SubResource("Resource_sg3ci"), SubResource("Resource_lr3wq")])

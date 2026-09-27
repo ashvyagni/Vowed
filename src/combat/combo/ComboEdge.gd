@@ -70,6 +70,15 @@ extends Resource
 ## rest, e.g. a just-frame link that rewards precision.
 @export var require_frame_window: Vector2i = Vector2i(-1, -1)
 
+## Maximum frames since the actor last dashed, `-1` for no requirement.
+##
+## Needed because `require_frame_window` is ATTACK-relative, so it cannot express
+## "during or just after a dash" — from neutral there is no attack and the frame
+## is always 0, which would make a dash attack fire on every press. Dash-cancel
+## attacks are a staple of the genre, so this gets its own condition rather than
+## a contrived encoding.
+@export_range(-1, 60, 1) var max_frames_since_dash: int = -1
+
 ## Minimum combo length. Used for routes that only open deep into a string.
 @export_range(0, 50, 1) var min_combo_length: int = 0
 
@@ -130,6 +139,8 @@ func matches(context: ComboContext) -> bool:
 		return false
 	if not _combo_length_ok(context):
 		return false
+	if not _dash_recency_ok(context):
+		return false
 	if not _target_ok(context):
 		return false
 	if not _soul_ok(context):
@@ -172,6 +183,14 @@ func _combo_length_ok(context: ComboContext) -> bool:
 	if max_combo_length >= 0 and context.combo_length > max_combo_length:
 		return false
 	return true
+
+
+func _dash_recency_ok(context: ComboContext) -> bool:
+	if max_frames_since_dash < 0:
+		return true
+	if context.frames_since_dash < 0:
+		return false  # has not dashed at all
+	return context.frames_since_dash <= max_frames_since_dash
 
 
 func _target_ok(context: ComboContext) -> bool:
@@ -219,9 +238,12 @@ func validate() -> PackedStringArray:
 
 	if to == &"":
 		problems.append("%s: 'to' is empty — the route goes nowhere" % label)
-	if to == from and from != &"":
-		problems.append("%s: routes an attack to itself, which would loop "
-			% label + "indefinitely unless max_combo_length closes it")
+	# Only a problem when nothing closes the loop. Warning on a self-route that
+	# IS bounded would be a false positive, and a validator that cries wolf stops
+	# being read at all — which costs more than the check is worth.
+	if to == from and from != &"" and max_combo_length < 0:
+		problems.append("%s: routes an attack to itself with no "
+			% label + "max_combo_length, so the loop never closes")
 	if require_frame_window.x >= 0 \
 			and require_frame_window.y < require_frame_window.x:
 		problems.append("%s: frame window end (%d) is before its start (%d)"
@@ -256,6 +278,8 @@ func describe() -> String:
 		conditions.append("manifest")
 	if require_passive_state != &"":
 		conditions.append(str(require_passive_state))
+	if max_frames_since_dash >= 0:
+		conditions.append("dash<=%df" % max_frames_since_dash)
 
 	var condition_text: String = ""
 	if not conditions.is_empty():

@@ -59,6 +59,11 @@ var passive_state: StringName = &""
 ## Hits landed in the current combo. 0 in neutral.
 var combo_length: int = 0
 
+## Frames since this actor last began a dash; `-1` if it has not dashed.
+## Gates dash-cancel attacks, which `attack_frame` cannot express because a dash
+## attack is launched from neutral rather than from another attack.
+var frames_since_dash: int = -1
+
 ## Combat frame this context was built on. Debug and logging only.
 var frame: int = 0
 
@@ -77,6 +82,7 @@ func reset() -> void:
 	resonance = 0.0
 	passive_state = &""
 	combo_length = 0
+	frames_since_dash = -1
 	frame = 0
 
 

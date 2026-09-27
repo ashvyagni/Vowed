@@ -1,0 +1,48 @@
+[gd_resource type="Resource" script_class="AttackData" format=3]
+
+[ext_resource type="Script" path="res://src/combat/data/CancelWindow.gd" id="1_4qcko"]
+[ext_resource type="Script" path="res://src/combat/data/HitboxKeyframe.gd" id="2_rojba"]
+[ext_resource type="Script" path="res://src/combat/data/MotionKeyframe.gd" id="3_vgskp"]
+[ext_resource type="Resource" path="res://data/attacks/reactions/light.tres" id="4_hcf0i"]
+[ext_resource type="Resource" path="res://data/attacks/reactions/medium.tres" id="5_hx4j6"]
+[ext_resource type="Script" path="res://src/combat/data/AttackData.gd" id="6_2q6uh"]
+
+[sub_resource type="Resource" id="Resource_kcd10"]
+script = ExtResource("1_4qcko")
+first_frame = 9
+last_frame = 18
+requires = 1
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_fam83"]
+radius = 0.48
+
+[sub_resource type="Resource" id="Resource_brfc0"]
+script = ExtResource("2_rojba")
+first_frame = 6
+last_frame = 8
+shape = SubResource("SphereShape3D_fam83")
+offset = Vector3(0, 1.26, 0.95)
+
+[sub_resource type="Resource" id="Resource_um8dv"]
+script = ExtResource("3_vgskp")
+frame = 4
+velocity = Vector3(0, 0, 7.5)
+dampen_factor = 0.35
+
+[resource]
+script = ExtResource("6_2q6uh")
+id = &"dash_punch"
+display_name = "Dash Palm"
+animation = &"dash_punch"
+category = 2
+recovery = 16
+hitboxes = Array[ExtResource("2_rojba")]([SubResource("Resource_brfc0")])
+on_hit = ExtResource("5_hx4j6")
+on_guard = ExtResource("4_hcf0i")
+damage = 12.0
+stagger_damage = 17.0
+chip_damage = 0.96
+resonance_on_hit = 1.96
+resonance_on_guard = 0.3
+cancel_windows = Array[ExtResource("1_4qcko")]([SubResource("Resource_kcd10")])
+motion = Array[ExtResource("3_vgskp")]([SubResource("Resource_um8dv")])

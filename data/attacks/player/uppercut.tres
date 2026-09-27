@@ -1,0 +1,55 @@
+[gd_resource type="Resource" script_class="AttackData" format=3]
+
+[ext_resource type="Script" path="res://src/combat/data/CancelWindow.gd" id="1_8iu52"]
+[ext_resource type="Script" path="res://src/combat/data/HitboxKeyframe.gd" id="2_4tyv0"]
+[ext_resource type="Script" path="res://src/combat/data/MotionKeyframe.gd" id="3_j2rtl"]
+[ext_resource type="Resource" path="res://data/attacks/reactions/light.tres" id="4_716c1"]
+[ext_resource type="Resource" path="res://data/attacks/reactions/launch.tres" id="5_8i05l"]
+[ext_resource type="Script" path="res://src/combat/data/AttackData.gd" id="6_s4w3b"]
+
+[sub_resource type="Resource" id="Resource_4tcwy"]
+script = ExtResource("1_8iu52")
+cancel_into = 5
+first_frame = 14
+last_frame = 24
+requires = 1
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_44jg7"]
+radius = 0.56
+
+[sub_resource type="Resource" id="Resource_og37u"]
+script = ExtResource("2_4tyv0")
+first_frame = 12
+last_frame = 15
+shape = SubResource("SphereShape3D_44jg7")
+offset = Vector3(0, 1.55, 0.62)
+
+[sub_resource type="Resource" id="Resource_e8vtl"]
+script = ExtResource("3_j2rtl")
+frame = 12
+velocity = Vector3(0, 0, 1.4)
+dampen_factor = 0.35
+
+[resource]
+script = ExtResource("6_s4w3b")
+id = &"uppercut"
+display_name = "Rising Palm"
+animation = &"uppercut"
+designer_notes = "THE launcher. 1 armour point lets it trade through a jab, so it is a real commitment rather than a slow poke."
+priority = 3
+startup = 12
+active = 4
+recovery = 22
+hitstop = 8
+guard_hitstop = 6
+hitboxes = Array[ExtResource("2_4tyv0")]([SubResource("Resource_og37u")])
+on_hit = ExtResource("5_8i05l")
+on_guard = ExtResource("4_716c1")
+damage = 14.0
+stagger_damage = 26.0
+chip_damage = 1.12
+resonance_on_hit = 2.12
+resonance_on_guard = 0.3
+cancel_windows = Array[ExtResource("1_8iu52")]([SubResource("Resource_4tcwy")])
+motion = Array[ExtResource("3_j2rtl")]([SubResource("Resource_e8vtl")])
+interrupt_armor = 1

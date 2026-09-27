@@ -426,3 +426,64 @@ func test_describe_routes_lists_the_move_set() -> void:
 	assert_contains(dump, "jab_1")
 	assert_contains(dump, "jab_2")
 	assert_contains(dump, "neutral")
+
+# --- dash recency -----------------------------------------------------------
+
+func test_dash_attack_requires_a_recent_dash() -> void:
+	# A dash attack launches from NEUTRAL, so it cannot be gated by an
+	# attack-relative frame window — that reads as frame 0 and would fire on
+	# every press, making the dash attack beat the jab unconditionally.
+	var e := _edge(&"", &"dash_punch", CombatAction.Id.PUNCH, 8)
+	e.max_frames_since_dash = 24
+
+	context.frames_since_dash = -1
+	assert_eq(graph.resolve(CombatAction.Id.PUNCH, context), &"",
+		"with no dash at all, the dash attack must not be available")
+
+	context.frames_since_dash = 40
+	assert_eq(graph.resolve(CombatAction.Id.PUNCH, context), &"",
+		"a dash 40 frames ago is outside the 24-frame window")
+
+	context.frames_since_dash = 10
+	assert_eq(graph.resolve(CombatAction.Id.PUNCH, context), &"dash_punch",
+		"a recent dash makes the dash attack available")
+
+
+func test_dash_attack_outranks_the_neutral_attack_only_after_a_dash() -> void:
+	# The behaviour that was actually broken: the higher-priority dash attack
+	# must not steal the press when the player has not dashed.
+	_edge(&"", &"jab_1", CombatAction.Id.PUNCH, 0)
+	var dash := _edge(&"", &"dash_punch", CombatAction.Id.PUNCH, 8)
+	dash.max_frames_since_dash = 24
+
+	context.frames_since_dash = -1
+	assert_eq(graph.resolve(CombatAction.Id.PUNCH, context), &"jab_1",
+		"without a dash, the plain jab must still come out")
+
+	context.frames_since_dash = 5
+	assert_eq(graph.resolve(CombatAction.Id.PUNCH, context), &"dash_punch",
+		"after a dash, the dash attack takes priority")
+
+
+# --- validator precision ----------------------------------------------------
+
+func test_validate_allows_a_self_loop_that_is_bounded() -> void:
+	# An air-string that repeats itself is legitimate when max_combo_length
+	# closes it. Warning here would be a false positive, and a validator that
+	# cries wolf stops being read — which costs more than the check is worth.
+	_edge(&"", &"air_punch", CombatAction.Id.PUNCH)
+	var loop := _edge(&"air_punch", &"air_punch", CombatAction.Id.PUNCH)
+	loop.max_combo_length = 6
+
+	var problems: PackedStringArray = graph.validate()
+	assert_false("\n".join(problems).contains("loop"),
+		"a bounded self-route is valid and must not be reported")
+
+
+func test_validate_flags_an_unbounded_self_loop() -> void:
+	_edge(&"", &"air_punch", CombatAction.Id.PUNCH)
+	_edge(&"air_punch", &"air_punch", CombatAction.Id.PUNCH)
+
+	var problems: PackedStringArray = graph.validate()
+	assert_contains("\n".join(problems), "loop never closes",
+		"an unbounded self-route would repeat forever and must be reported")

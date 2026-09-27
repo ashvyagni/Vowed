@@ -39,6 +39,15 @@ signal attack_ended(attack_id: StringName, was_cancelled: bool)
 ## emitted during hitstop, because the attack genuinely is not advancing.
 signal attack_frame_advanced(attack: AttackData, attack_frame: int)
 
+## Emitted when a resolved hit has damage to apply.
+##
+## Combat deliberately does NOT know about health: health belongs to the actor.
+## The resolver computes final damage and reports it here, the owning actor
+## listens and applies it. That keeps the dependency pointing downward
+## (docs/ARCHITECTURE.md §2.1) — combat would otherwise need a reference to
+## `Actor`, which sits above it.
+signal damage_received(result: HitResult)
+
 ## The move set's attacks. Without one the actor cannot attack at all.
 @export var library: AttackLibrary
 
@@ -456,6 +465,12 @@ func register_own_contact(result: CombatTypes.ContactResult) -> void:
 				hitstop_remaining = attack.guard_hitstop
 		_:
 			pass
+
+
+## Report a resolved hit's final damage. Called by the resolver after it has
+## applied combo scaling and hurtbox multipliers.
+func report_damage(result: HitResult) -> void:
+	damage_received.emit(result)
 
 
 func apply_hitstop(frames: int) -> void:

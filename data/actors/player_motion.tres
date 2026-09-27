@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="MotionProfile" format=3]
+
+[ext_resource type="Script" path="res://src/actor/base/MotionProfile.gd" id="1_bdftb"]
+
+[resource]
+script = ExtResource("1_bdftb")
+id = &"player"
+max_speed = 6.4
+strafe_speed = 4.4
+acceleration = 58.0
+deceleration = 82.0
+turn_deceleration = 130.0
+turn_speed = 960.0
+attack_turn_speed = 85.0
+jump_height = 2.0
+rise_gravity_scale = 0.82
+fall_gravity_scale = 1.42
+air_control = 0.74
+max_fall_speed = 34.0
+dash_speed = 13.5

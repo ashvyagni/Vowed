@@ -1,0 +1,44 @@
+[gd_resource type="Resource" script_class="AttackData" format=3]
+
+[ext_resource type="Script" path="res://src/combat/data/CancelWindow.gd" id="1_51fgm"]
+[ext_resource type="Script" path="res://src/combat/data/HitboxKeyframe.gd" id="2_pydaa"]
+[ext_resource type="Script" path="res://src/combat/data/MotionKeyframe.gd" id="3_psr1c"]
+[ext_resource type="Resource" path="res://data/attacks/reactions/light.tres" id="4_f7nmb"]
+[ext_resource type="Resource" path="res://data/attacks/reactions/heavy.tres" id="5_epr2b"]
+[ext_resource type="Script" path="res://src/combat/data/AttackData.gd" id="6_pdgms"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_7uejr"]
+radius = 0.52
+
+[sub_resource type="Resource" id="Resource_nyt17"]
+script = ExtResource("2_pydaa")
+first_frame = 8
+last_frame = 10
+shape = SubResource("SphereShape3D_7uejr")
+offset = Vector3(0, 1, 0.98)
+
+[sub_resource type="Resource" id="Resource_udbgr"]
+script = ExtResource("3_psr1c")
+frame = 6
+velocity = Vector3(0, 0, 8.5)
+dampen_factor = 0.35
+
+[resource]
+script = ExtResource("6_pdgms")
+id = &"dash_kick"
+display_name = "Dash Heel"
+animation = &"dash_kick"
+category = 2
+startup = 8
+recovery = 20
+hitstop = 6
+guard_hitstop = 4
+hitboxes = Array[ExtResource("2_pydaa")]([SubResource("Resource_nyt17")])
+on_hit = ExtResource("5_epr2b")
+on_guard = ExtResource("4_f7nmb")
+damage = 15.0
+stagger_damage = 21.0
+chip_damage = 1.2
+resonance_on_hit = 2.2
+resonance_on_guard = 0.3
+motion = Array[ExtResource("3_psr1c")]([SubResource("Resource_udbgr")])

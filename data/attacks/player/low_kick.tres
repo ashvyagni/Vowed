@@ -1,0 +1,44 @@
+[gd_resource type="Resource" script_class="AttackData" format=3]
+
+[ext_resource type="Script" path="res://src/combat/data/CancelWindow.gd" id="1_7cxdc"]
+[ext_resource type="Script" path="res://src/combat/data/HitboxKeyframe.gd" id="2_h4cdq"]
+[ext_resource type="Script" path="res://src/combat/data/MotionKeyframe.gd" id="3_els16"]
+[ext_resource type="Resource" path="res://data/attacks/reactions/light.tres" id="4_m3ex5"]
+[ext_resource type="Resource" path="res://data/attacks/reactions/medium.tres" id="5_pkdmg"]
+[ext_resource type="Script" path="res://src/combat/data/AttackData.gd" id="6_f6bhs"]
+
+[sub_resource type="Resource" id="Resource_sgoky"]
+script = ExtResource("1_7cxdc")
+cancel_into = 11
+first_frame = 9
+last_frame = 16
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_s8rxh"]
+radius = 0.46
+
+[sub_resource type="Resource" id="Resource_btvxx"]
+script = ExtResource("2_h4cdq")
+first_frame = 6
+last_frame = 8
+shape = SubResource("SphereShape3D_s8rxh")
+offset = Vector3(0, 0.42, 0.88)
+
+[resource]
+script = ExtResource("6_f6bhs")
+id = &"low_kick"
+display_name = "Low Kick"
+animation = &"low_kick"
+designer_notes = "Hits low. Beats a standing guard once crouch guard exists at M2."
+category = 1
+height = 2
+hitstop = 4
+guard_hitstop = 2
+hitboxes = Array[ExtResource("2_h4cdq")]([SubResource("Resource_btvxx")])
+on_hit = ExtResource("5_pkdmg")
+on_guard = ExtResource("4_m3ex5")
+damage = 9.0
+stagger_damage = 12.0
+chip_damage = 0.72
+resonance_on_hit = 1.72
+resonance_on_guard = 0.3
+cancel_windows = Array[ExtResource("1_7cxdc")]([SubResource("Resource_sgoky")])

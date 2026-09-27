@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="HitReaction" format=3]
+
+[ext_resource type="Script" path="res://src/combat/data/HitReaction.gd" id="1_2qm7c"]
+
+[resource]
+script = ExtResource("1_2qm7c")
+kind = 7
+hitstun_frames = 26
+pushback = 5.0
+causes_knockdown = true
+camera_shake = 0.35

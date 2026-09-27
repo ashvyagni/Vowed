@@ -1,0 +1,45 @@
+[gd_resource type="Resource" script_class="AttackData" format=3]
+
+[ext_resource type="Script" path="res://src/combat/data/CancelWindow.gd" id="1_mt3xk"]
+[ext_resource type="Script" path="res://src/combat/data/HitboxKeyframe.gd" id="2_icdnx"]
+[ext_resource type="Script" path="res://src/combat/data/MotionKeyframe.gd" id="3_mx1ct"]
+[ext_resource type="Resource" path="res://data/attacks/reactions/light.tres" id="4_2602k"]
+[ext_resource type="Resource" path="res://data/attacks/reactions/spin.tres" id="5_sm4gx"]
+[ext_resource type="Script" path="res://src/combat/data/AttackData.gd" id="6_dn8de"]
+
+[sub_resource type="Resource" id="Resource_xssq0"]
+script = ExtResource("1_mt3xk")
+cancel_into = 3
+first_frame = 14
+last_frame = 20
+requires = 3
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_i6tsa"]
+radius = 0.58
+
+[sub_resource type="Resource" id="Resource_0tipe"]
+script = ExtResource("2_icdnx")
+first_frame = 10
+last_frame = 13
+shape = SubResource("SphereShape3D_i6tsa")
+offset = Vector3(0, 1.1, 0.75)
+
+[resource]
+script = ExtResource("6_dn8de")
+id = &"spin_kick"
+display_name = "Spinning Heel"
+animation = &"spin_kick"
+designer_notes = "Spins the victim without reorienting them, which opens back-hit routes."
+category = 2
+startup = 10
+active = 4
+recovery = 18
+hitboxes = Array[ExtResource("2_icdnx")]([SubResource("Resource_0tipe")])
+on_hit = ExtResource("5_sm4gx")
+on_guard = ExtResource("4_2602k")
+damage = 13.0
+stagger_damage = 20.0
+chip_damage = 1.04
+resonance_on_hit = 2.04
+resonance_on_guard = 0.3
+cancel_windows = Array[ExtResource("1_mt3xk")]([SubResource("Resource_xssq0")])

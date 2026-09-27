@@ -1,0 +1,50 @@
+[gd_resource type="Resource" script_class="AttackData" format=3]
+
+[ext_resource type="Script" path="res://src/combat/data/CancelWindow.gd" id="1_moguy"]
+[ext_resource type="Script" path="res://src/combat/data/HitboxKeyframe.gd" id="2_ej0oc"]
+[ext_resource type="Script" path="res://src/combat/data/MotionKeyframe.gd" id="3_m8ssr"]
+[ext_resource type="Resource" path="res://data/attacks/reactions/light.tres" id="4_m207c"]
+[ext_resource type="Script" path="res://src/combat/data/AttackData.gd" id="5_hatuv"]
+
+[sub_resource type="Resource" id="Resource_2bchx"]
+script = ExtResource("1_moguy")
+cancel_into = 15
+first_frame = 7
+last_frame = 15
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_reb08"]
+radius = 0.44
+
+[sub_resource type="Resource" id="Resource_b7x6t"]
+script = ExtResource("2_ej0oc")
+first_frame = 5
+last_frame = 6
+shape = SubResource("SphereShape3D_reb08")
+offset = Vector3(-0.18, 1.34, 0.8)
+
+[sub_resource type="Resource" id="Resource_ljw3m"]
+script = ExtResource("3_m8ssr")
+frame = 5
+velocity = Vector3(0, 0, 2.2)
+dampen_factor = 0.35
+
+[resource]
+script = ExtResource("5_hatuv")
+id = &"jab_2"
+display_name = "Cross"
+animation = &"jab_2"
+startup = 5
+active = 2
+recovery = 10
+hitstop = 3
+guard_hitstop = 1
+hitboxes = Array[ExtResource("2_ej0oc")]([SubResource("Resource_b7x6t")])
+on_hit = ExtResource("4_m207c")
+on_guard = ExtResource("4_m207c")
+damage = 7.0
+stagger_damage = 9.0
+chip_damage = 0.56
+resonance_on_hit = 1.56
+resonance_on_guard = 0.3
+cancel_windows = Array[ExtResource("1_moguy")]([SubResource("Resource_2bchx")])
+motion = Array[ExtResource("3_m8ssr")]([SubResource("Resource_ljw3m")])

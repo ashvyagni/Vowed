@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="AttackLibrary" format=3]
+
+[ext_resource type="Script" path="res://src/combat/data/AttackData.gd" id="1_eyiic"]
+[ext_resource type="Resource" path="res://data/attacks/player/jab_1.tres" id="2_iqppn"]
+[ext_resource type="Resource" path="res://data/attacks/player/jab_2.tres" id="3_11qi4"]
+[ext_resource type="Resource" path="res://data/attacks/player/straight.tres" id="4_h5sbb"]
+[ext_resource type="Resource" path="res://data/attacks/player/low_kick.tres" id="5_4m0hj"]
+[ext_resource type="Resource" path="res://data/attacks/player/roundhouse.tres" id="6_tumrq"]
+[ext_resource type="Resource" path="res://data/attacks/player/uppercut.tres" id="7_8gvj6"]
+[ext_resource type="Resource" path="res://data/attacks/player/axe_kick.tres" id="8_2ucoy"]
+[ext_resource type="Resource" path="res://data/attacks/player/lunge_punch.tres" id="9_nmyig"]
+[ext_resource type="Resource" path="res://data/attacks/player/sweep.tres" id="10_w4mvx"]
+[ext_resource type="Resource" path="res://data/attacks/player/spin_kick.tres" id="11_kjbxl"]
+[ext_resource type="Resource" path="res://data/attacks/player/air_punch.tres" id="12_q6t8t"]
+[ext_resource type="Resource" path="res://data/attacks/player/air_kick.tres" id="13_ysp3y"]
+[ext_resource type="Resource" path="res://data/attacks/player/dive_kick.tres" id="14_gleba"]
+[ext_resource type="Resource" path="res://data/attacks/player/dash_punch.tres" id="15_f63vf"]
+[ext_resource type="Resource" path="res://data/attacks/player/dash_kick.tres" id="16_y5st5"]
+[ext_resource type="Resource" path="res://data/attacks/player/counter_palm.tres" id="17_ig4bg"]
+[ext_resource type="Script" path="res://src/combat/data/AttackLibrary.gd" id="18_4dym5"]
+
+[resource]
+script = ExtResource("18_4dym5")
+id = &"player_base"
+display_name = "Player — base Taijutsu"
+attacks = Array[ExtResource("1_eyiic")]([ExtResource("2_iqppn"), ExtResource("3_11qi4"), ExtResource("4_h5sbb"), ExtResource("5_4m0hj"), ExtResource("6_tumrq"), ExtResource("7_8gvj6"), ExtResource("8_2ucoy"), ExtResource("9_nmyig"), ExtResource("10_w4mvx"), ExtResource("11_kjbxl"), ExtResource("12_q6t8t"), ExtResource("13_ysp3y"), ExtResource("14_gleba"), ExtResource("15_f63vf"), ExtResource("16_y5st5"), ExtResource("17_ig4bg")])

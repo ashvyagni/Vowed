@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="HitReaction" format=3]
+
+[ext_resource type="Script" path="res://src/combat/data/HitReaction.gd" id="1_5lj6d"]
+
+[resource]
+script = ExtResource("1_5lj6d")
+hitstun_frames = 18
+pushback = 3.5

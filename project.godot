@@ -92,6 +92,7 @@ occlusion_culling/use_occlusion_culling=true
 
 GameEvents="*res://src/core/autoload/GameEvents.gd"
 CombatClock="*res://src/core/autoload/CombatClock.gd"
+CombatDirector="*res://src/core/autoload/CombatDirector.gd"
 
 ; --------------------------------------------------------------------------
 ; GENERATED SECTION — do not hand-edit.

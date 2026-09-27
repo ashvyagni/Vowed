@@ -1,0 +1,48 @@
+[gd_resource type="Resource" script_class="AttackData" format=3]
+
+[ext_resource type="Script" path="res://src/combat/data/CancelWindow.gd" id="1_gbs05"]
+[ext_resource type="Script" path="res://src/combat/data/HitboxKeyframe.gd" id="2_86aco"]
+[ext_resource type="Script" path="res://src/combat/data/MotionKeyframe.gd" id="3_q7nki"]
+[ext_resource type="Resource" path="res://data/attacks/reactions/light.tres" id="4_j76m5"]
+[ext_resource type="Resource" path="res://data/attacks/reactions/medium.tres" id="5_mya0r"]
+[ext_resource type="Script" path="res://src/combat/data/AttackData.gd" id="6_6disl"]
+
+[sub_resource type="Resource" id="Resource_dsrvj"]
+script = ExtResource("1_gbs05")
+first_frame = 10
+last_frame = 18
+requires = 1
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_mjxnb"]
+
+[sub_resource type="Resource" id="Resource_d8lsr"]
+script = ExtResource("2_86aco")
+first_frame = 7
+last_frame = 9
+shape = SubResource("SphereShape3D_mjxnb")
+offset = Vector3(0, 1.32, 0.92)
+
+[sub_resource type="Resource" id="Resource_xs6fr"]
+script = ExtResource("3_q7nki")
+frame = 7
+velocity = Vector3(0, 0, 3.4)
+dampen_factor = 0.35
+
+[resource]
+script = ExtResource("6_6disl")
+id = &"straight"
+display_name = "Straight"
+animation = &"straight"
+designer_notes = "String ender. Only cancels ON HIT, so mashing into it on block is punished."
+startup = 7
+recovery = 15
+hitboxes = Array[ExtResource("2_86aco")]([SubResource("Resource_d8lsr")])
+on_hit = ExtResource("5_mya0r")
+on_guard = ExtResource("4_j76m5")
+damage = 12.0
+stagger_damage = 16.0
+chip_damage = 0.96
+resonance_on_hit = 1.96
+resonance_on_guard = 0.3
+cancel_windows = Array[ExtResource("1_gbs05")]([SubResource("Resource_dsrvj")])
+motion = Array[ExtResource("3_q7nki")]([SubResource("Resource_xs6fr")])

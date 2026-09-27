@@ -1,0 +1,46 @@
+[gd_resource type="Resource" script_class="AttackData" format=3]
+
+[ext_resource type="Script" path="res://src/combat/data/CancelWindow.gd" id="1_o37jp"]
+[ext_resource type="Script" path="res://src/combat/data/HitboxKeyframe.gd" id="2_g5dsp"]
+[ext_resource type="Script" path="res://src/combat/data/MotionKeyframe.gd" id="3_y48mr"]
+[ext_resource type="Resource" path="res://data/attacks/reactions/light.tres" id="4_nsq8m"]
+[ext_resource type="Resource" path="res://data/attacks/reactions/crumple.tres" id="5_8bjxq"]
+[ext_resource type="Script" path="res://src/combat/data/AttackData.gd" id="6_563es"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_1umhx"]
+
+[sub_resource type="Resource" id="Resource_u5mme"]
+script = ExtResource("2_g5dsp")
+first_frame = 5
+last_frame = 7
+shape = SubResource("SphereShape3D_1umhx")
+offset = Vector3(0, 1.3, 0.8)
+
+[sub_resource type="Resource" id="Resource_alr3p"]
+script = ExtResource("3_y48mr")
+frame = 5
+velocity = Vector3(0, 0, 3)
+dampen_factor = 0.35
+
+[resource]
+script = ExtResource("6_563es")
+id = &"counter_palm"
+display_name = "Counter Palm"
+animation = &"counter_palm"
+designer_notes = "Only reachable from guard. Invulnerable through startup, crumples on hit — the payoff for blocking well."
+category = 2
+priority = 5
+startup = 5
+recovery = 16
+hitstop = 8
+guard_hitstop = 6
+hitboxes = Array[ExtResource("2_g5dsp")]([SubResource("Resource_u5mme")])
+on_hit = ExtResource("5_8bjxq")
+on_guard = ExtResource("4_nsq8m")
+damage = 14.0
+stagger_damage = 24.0
+chip_damage = 1.12
+resonance_on_hit = 2.12
+resonance_on_guard = 0.3
+motion = Array[ExtResource("3_y48mr")]([SubResource("Resource_alr3p")])
+invulnerable_frames = Vector2i(0, 4)

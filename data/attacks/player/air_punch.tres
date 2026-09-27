@@ -1,0 +1,40 @@
+[gd_resource type="Resource" script_class="AttackData" format=3]
+
+[ext_resource type="Script" path="res://src/combat/data/CancelWindow.gd" id="1_q2mkg"]
+[ext_resource type="Script" path="res://src/combat/data/HitboxKeyframe.gd" id="2_uis8n"]
+[ext_resource type="Script" path="res://src/combat/data/MotionKeyframe.gd" id="3_5ppbu"]
+[ext_resource type="Resource" path="res://data/attacks/reactions/light.tres" id="4_tw5ke"]
+[ext_resource type="Script" path="res://src/combat/data/AttackData.gd" id="5_mfuxw"]
+
+[sub_resource type="Resource" id="Resource_5a700"]
+script = ExtResource("1_q2mkg")
+cancel_into = 3
+first_frame = 7
+last_frame = 14
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_awr4j"]
+radius = 0.46
+
+[sub_resource type="Resource" id="Resource_cjsd6"]
+script = ExtResource("2_uis8n")
+first_frame = 5
+last_frame = 7
+shape = SubResource("SphereShape3D_awr4j")
+offset = Vector3(0, 1.1, 0.72)
+
+[resource]
+script = ExtResource("5_mfuxw")
+id = &"air_punch"
+display_name = "Air Palm"
+animation = &"air_punch"
+stance = 1
+startup = 5
+hitstop = 4
+guard_hitstop = 2
+hitboxes = Array[ExtResource("2_uis8n")]([SubResource("Resource_cjsd6")])
+on_hit = ExtResource("4_tw5ke")
+on_guard = ExtResource("4_tw5ke")
+chip_damage = 0.64
+resonance_on_hit = 1.6400000000000001
+resonance_on_guard = 0.3
+cancel_windows = Array[ExtResource("1_q2mkg")]([SubResource("Resource_5a700")])

@@ -1,0 +1,46 @@
+[gd_resource type="Resource" script_class="AttackData" format=3]
+
+[ext_resource type="Script" path="res://src/combat/data/CancelWindow.gd" id="1_h86la"]
+[ext_resource type="Script" path="res://src/combat/data/HitboxKeyframe.gd" id="2_qc2t4"]
+[ext_resource type="Script" path="res://src/combat/data/MotionKeyframe.gd" id="3_glrtg"]
+[ext_resource type="Resource" path="res://data/attacks/reactions/light.tres" id="4_rxvvi"]
+[ext_resource type="Resource" path="res://data/attacks/reactions/knockdown.tres" id="5_48blc"]
+[ext_resource type="Script" path="res://src/combat/data/AttackData.gd" id="6_0l7io"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_kug5u"]
+
+[sub_resource type="Resource" id="Resource_oo802"]
+script = ExtResource("2_qc2t4")
+first_frame = 14
+last_frame = 16
+shape = SubResource("SphereShape3D_kug5u")
+offset = Vector3(0, 0.95, 0.78)
+
+[sub_resource type="Resource" id="Resource_g2yys"]
+script = ExtResource("3_glrtg")
+frame = 14
+velocity = Vector3(0, 0, 1.8)
+dampen_factor = 0.35
+
+[resource]
+script = ExtResource("6_0l7io")
+id = &"axe_kick"
+display_name = "Axe Kick"
+animation = &"axe_kick"
+designer_notes = "Overhead, forces a knockdown. The answer to a crouching turtle."
+category = 1
+height = 3
+startup = 14
+recovery = 24
+hitstop = 7
+guard_hitstop = 5
+hitboxes = Array[ExtResource("2_qc2t4")]([SubResource("Resource_oo802")])
+on_hit = ExtResource("5_48blc")
+on_guard = ExtResource("4_rxvvi")
+damage = 18.0
+stagger_damage = 30.0
+chip_damage = 1.44
+resonance_on_hit = 2.44
+resonance_on_guard = 0.3
+motion = Array[ExtResource("3_glrtg")]([SubResource("Resource_g2yys")])
+interrupt_armor = 1
