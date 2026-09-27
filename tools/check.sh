@@ -18,8 +18,21 @@ step() { printf '\n\033[1m==> %s\033[0m\n' "$1"; }
 
 step "Import and class registry"
 godot --headless --editor --quit >/dev/null 2>&1 || true
+# The cache is a Godot config file listing entries as `"class": &"Name"`, so the
+# old `grep -c 'class='` matched nothing and this step cheerfully reported
+# "OK — 0 class(es)" on every run. A check whose number is always zero is not a
+# check, so the count is now asserted rather than printed: a registry that has
+# lost the project's classes is exactly the failure this step exists to catch,
+# and it would have sailed through before.
+CLASS_FLOOR=25
 if [ -f .godot/global_script_class_cache.cfg ]; then
-    echo "OK — $(grep -c 'class=' .godot/global_script_class_cache.cfg || echo 0) class(es)"
+    classes=$(grep -c '"class":' .godot/global_script_class_cache.cfg || echo 0)
+    if [ "$classes" -lt "$CLASS_FLOOR" ]; then
+        echo "FAIL — only $classes class(es) registered, expected at least $CLASS_FLOOR"
+        failed=1
+    else
+        echo "OK — $classes class(es)"
+    fi
 else
     echo "FAIL — class cache missing"; failed=1
 fi

@@ -250,6 +250,62 @@ invulnerability) is a property, not a state.
 
 ---
 
+## 5.1 Air combat: a juggle is a shared fall
+
+Air combat is a first-class system, not a flourish, and it is the part of the
+move set with the most ways to be silently broken. The rule that makes it work
+is one sentence: **attacker and victim descend at the same rate.**
+
+A launched victim floats — `HitReaction.float_frames` frames at
+`float_gravity_scale`, refreshed by each hit of the juggle and bounded by the
+graph's `max_combo_length` rather than by gravity. The attacker gets the same
+reduced rate through `MotionProfile.air_attack_fall_scale` while performing an
+airborne attack, so the pair holds its relative position for the length of the
+string. The two numbers are deliberately equal (0.30).
+
+Three properties are non-obvious and each was a bug first:
+
+- **The attacker's hang applies to DESCENT ONLY.** Weaker gravity against an
+  upward velocity buys *height*, not time. Scaling both directions made the
+  player levitate to 3.5 m mid-string. Hang time and jump height are different
+  quantities and an air attack buys exactly one of them.
+- **The attacker's hang is not optional.** The four-attack aerial route is ~98
+  frames of frame data before any hitstop; a 2.0 m jump is airborne for ~36.
+  Without a shared descent the numbers simply do not permit an air combo.
+- **A victim hit in midair stays airborne.** Reactions are authored for a
+  standing target, so applying one verbatim in midair drops the victim into a
+  *grounded* state — which stops the float applying and makes every
+  target-state-gated route illegal mid-juggle.
+
+**Jumping out of an attack goes through the combat component.** Jump is the one
+action that moves the actor without `try_action`, because it is locomotion rather
+than a routed combat action. It must still call
+`CombatComponent.cancel_for_jump`, or the body leaves the ground while the attack
+keeps executing — and since every aerial route is authored from *no* predecessor,
+a stale ground attack leaves no edge to take and the whole air game becomes
+unreachable with no error. Combo survival is left to `_finish_attack`: cancelling
+a connected attack keeps the combo, cancelling a whiff drops it, so a jump is not
+a way to launder a missed launcher.
+
+**Launch height is bounded by the player's jump**, not chosen for spectacle. A
+launcher is an invitation to follow, so the victim's apex sits just under the
+player's own (about 2.1 m against 2.1 m) and the player hangs slightly above,
+striking downward. The horizontal component is near zero: pushing the target away
+costs the attacker the reach the launcher just earned.
+
+### What counts as "the target" for routing
+
+`ComboContext.target_state` describes the opponent about to be hit. It is **not**
+the lock-on target. Lock-on is a camera and steering affordance set by an explicit
+press; an opponent's state is a fact about the world. Tying them together made
+every `require_target_state` route dead unless the player had found the lock-on
+key, and made one button produce different moves depending on a camera toggle.
+The context falls back to the nearest actor within
+`Actor.COMBAT_AWARENESS_RANGE`; lock-on still wins when engaged, so deliberately
+fighting one opponent in a crowd does not route off whoever happens to be
+nearest. `Actor._local_direction` keeps using the lock-on target and only that,
+because "forward means toward the enemy" genuinely *is* steering.
+
 ## 6. Soul integration `[PLANNED M3]`
 
 Souls extend combat through **declared hooks only** — they never special-case
@@ -367,13 +423,23 @@ outcomes.
 
 | Item | Milestone |
 |---|---|
-| Animation driven by the frame counter (`seek`) | M1 remainder — the contract is defined; there are no animations yet |
+| Kick animations (9 of 16 attacks play a placeholder sword swing) | M1 remainder — blocked on a licensed source containing kicks |
 | Crouch state, crouching guard, true overhead/low mixups | M2 |
 | Enemy AI (goal-driven archetypes) | M2 |
 | Soul techniques, resonance, Manifestation | M3 |
 | Weapons and auxiliary tools | M9 |
 | Magic | M9 |
 
-**Combat currently runs on graybox capsules with no animation.** That ordering
-is deliberate: mechanics are proven with readable placeholder shapes before any
-art is committed, or art gets made for mechanics that then change.
+**Animation is wired, but nine of the sixteen attacks play a placeholder clip.**
+The free tier of the licensed animation library contains no kicks at all, so
+every kick currently plays a sword swing: it reads as *something* happening
+rather than as a frozen pose, and it is honest about being wrong. This is the
+largest outstanding readability problem in the move set — a correct kick is
+mechanically indistinguishable from an incorrect one to the systems, and entirely
+distinguishable to the player. See `docs/ASSET_LICENSES.md`.
+
+Mechanics are deliberately proven before art is committed, so that art does not
+get made for mechanics that then change. That ordering is holding, but it has a
+cost worth naming: with the wrong clip playing, a working route is
+indistinguishable from a broken one by eye, and a genuinely working three-hit
+kick string was reported as missing entirely.

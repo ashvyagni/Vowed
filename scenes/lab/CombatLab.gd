@@ -11,13 +11,38 @@ extends Node3D
 ##   1-5   set every dummy's behaviour mode
 ##   F6    reset the arena
 
+## The Lab's on-screen reference.
+##
+## It used to list "SOUL E" and "MANIFEST R" beside the working keys, with
+## nothing to say those are M3 features whose keys are bound and inert. Pressing
+## them did nothing and the screen insisted they should. A control list is a
+## PROMISE; listing an unimplemented key next to a working one breaks it, and the
+## reader's next assumption is that the combat system is broken rather than
+## unfinished.
+##
+## It also listed only the individual buttons and none of the 26 authored routes,
+## so the entire string game — the thing the move set mostly IS — was invisible
+## unless you happened to mash the right sequence. Every line below was checked
+## against `tools/bootstrap_player_moveset.gd`; if a route is retired, this list
+## is wrong and must change with it.
 const HINT_LINES: Array[String] = [
-	"MOVE  WASD        JUMP  Space      DASH  Shift",
-	"PUNCH K           KICK  J          GUARD/PARRY  Q (hold/tap)",
-	"SOUL  E           MANIFEST  R      LOCK ON  Tab",
+	"MOVE  WASD      JUMP  Space      DASH  Shift      LOCK ON  Tab",
+	"PUNCH K         KICK  J          GUARD/PARRY  Q (hold to guard, tap to parry)",
+	"",
+	"STRINGS    K K K  jab, jab, straight        K K K J  ...into axe kick",
+	"           J J J  low kick, roundhouse, axe kick",
+	"           K K J  jab, jab, spin kick       J K  low kick into jabs",
+	"COMMANDS   fwd+K lunge punch    fwd+J spin kick    back+J sweep",
+	"LAUNCHER   back+K uppercut  (also back+K after K K or J, on hit)",
+	"AIR COMBO  land the launcher, then Space to follow up:",
+	"           K  air palm   K  again   J  air kick   J  diving heel",
+	"DASH       Shift then K or J within a few frames",
 	"",
 	"F1 overlay   F2 hitboxes   F3 step   F4 pause   F5 slow-mo   F6 reset",
 	"1 idle  2 block  3 parry  4 counter  5 aggressive   (dummy mode)",
+	"",
+	"NOT YET IMPLEMENTED: Soul (E) and Manifestation (R) land in M3. The keys",
+	"are bound and deliberately do nothing — they are not broken, they are unbuilt.",
 ]
 
 var _hint: Label

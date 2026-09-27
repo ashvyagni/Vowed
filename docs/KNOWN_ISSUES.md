@@ -75,6 +75,11 @@ signals.
 | ID | Item | Resolution | Closed |
 |---|---|---|---|
 | R9 | GitHub SSH key present locally but not registered on the account; remote unreachable, so no off-machine backup existed. | Key registered on the account; `git@github.com` authenticates as `ashvyagni`. Pushes working. | 2026-09-27 (M0) |
+| R10 | **Air combat was entirely unreachable.** `Actor._jump` cancelled an attack's body without cancelling the attack, so the player was airborne with a ground attack still executing and no aerial route could match. | `CombatComponent.cancel_for_jump`. Guarded by the aerial-chain integration case, negative-tested. | 2026-09-28 (M1) |
+| R11 | **Combo routing depended on a camera toggle.** `ComboContext.target_state` was filled only when locked on, so every `require_target_state` route — including the air-combo finisher — was dead unless the player had found Tab. | Context falls back to the nearest actor within `Actor.COMBAT_AWARENESS_RANGE`; lock-on still wins when engaged. | 2026-09-28 (M1) |
+| R12 | **`HitReaction.float_frames` / `float_gravity_scale` were dead data** — authored, validated, saved, and read by nothing, with a hardcoded `0.45` in their place. Retuning launch float in the data did nothing and reported no error. | Wired through `CombatComponent.float_frames_left`. Guarded by a case asserting the measured descent rate against the authored value. | 2026-09-28 (M1) |
+| R13 | **`tools/check.sh` reported "OK — 0 class(es)" every run**, counting `class=` in a file that writes `"class": &"Name"`. The step passed unconditionally. | Counts the real key and asserts a floor of 25. | 2026-09-28 (M1) |
+| R14 | **The Combat Lab listed `SOUL E` / `MANIFEST R` as working controls** (M3 features, keys bound and inert) and listed none of the 26 authored routes. | Hints marked unimplemented explicitly, and every authored string is now listed. | 2026-09-28 (M1) |
 
 ---
 

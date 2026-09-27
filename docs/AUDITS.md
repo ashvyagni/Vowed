@@ -107,3 +107,101 @@ why the expensive-to-reverse decisions were made now.
 Exit criteria are defined in [MILESTONES.md](MILESTONES.md#m1--movement-input-combat-foundation).
 The criterion that decides the milestone: *is punching things, with no Soul and
 no enemy AI, already satisfying?*
+
+### Air combat: five defects behind one symptom
+
+The aerial-chain integration case failed with *"combo 2, expected 3"* and stayed
+failing through several rounds of tuning. The tuning was the mistake. Five
+separate defects were hiding behind one number, and none of them was a tuning
+value:
+
+1. **`Actor._jump` cancelled an attack's BODY without cancelling the attack.**
+   An attack's JUMP cancel window granted permission, the player left the
+   ground — and the attack kept executing. Jump was the one action that moved the
+   actor without going through `CombatComponent.try_action`, so nothing ended the
+   attack. Because every aerial route is authored from *no* predecessor
+   (`"" -> air_punch`), a stale ground attack left no edge to take and the entire
+   aerial game was silently unreachable. Fixed with
+   `CombatComponent.cancel_for_jump`.
+
+2. **Combo routing's target state was gated on lock-on.**
+   `ComboContext.target_state` was filled only when `Actor.target` was set, and
+   that is set exclusively by an explicit lock-on press. So every route carrying
+   `require_target_state` — including the air-combo finisher — was dead for any
+   player who had not found the Tab key, and the same button produced a different
+   move depending on a camera toggle. Lock-on is a camera and steering concern;
+   an opponent's state is a fact about the world. The context now falls back to
+   the nearest actor within `Actor.COMBAT_AWARENESS_RANGE`, with lock-on still
+   winning when engaged.
+
+3. **`HitReaction.float_frames` and `float_gravity_scale` were dead data.**
+   Authored, validated by the bootstrap, written into `launch.tres` — and read by
+   nothing. `Actor._apply_gravity` used a hardcoded `0.45` for the whole LAUNCHED
+   state, so retuning launch float in the data changed nothing and reported no
+   error. A textbook `src/` ⟂ `data/` violation: content that looks authorable
+   while the real value lives in a script.
+
+4. **An airborne victim was put into GROUND hitstun.** Reactions are authored for
+   a standing target, so applying one verbatim in midair made the victim read as
+   grounded, which stopped the launch float applying and made target-state-gated
+   routes illegal mid-juggle.
+
+5. **The attacker had no share of the juggle's hang time.** The arithmetic is not
+   close: the four-attack aerial route is ~98 frames of frame data before any
+   hitstop, and a 2.0 m jump is airborne for ~36. The attacker sank while the
+   victim hung, so by the finisher the player was 1.5 m *below* a target it dives
+   downward at. Fixed with `MotionProfile.air_attack_fall_scale`, applied to
+   **descent only** — scaling gravity in both directions was tried first and was
+   wrong, because weaker gravity against an upward velocity buys *height*, and
+   the player levitated to 3.5 m mid-string. Hang time and jump height are
+   different quantities.
+
+**Two mechanics were reverted after measurement disproved their rationale.** A
+per-reaction `juggle_lift` impulse and a symmetric attacker gravity scale were
+both added while the diagnosis was wrong. Ablating each against the four-hit
+route changed nothing — the authored launch float already does that work. Both
+were removed rather than kept as harmless-looking code with a false comment
+attached, which is the same call made at M0 over the autoload exit-leak cleanup.
+
+**The launch retune was kept, but reclassified.** `launch_velocity` went from
+`(0, 9.0, 1.5)` to `(0, 5.8, 0.25)`. Measured: at 9.0 m/s the victim climbs to
+~3.9 m and is still rising a second later while the player's jump apex is ~2.1 m.
+The follow-ups still connected — 1.5 m of vertical error is inside a humanoid
+hurtbox capsule — so no test ever objected; it simply looked absurd. This is a
+feel choice and is now recorded as one, not as a fix.
+
+**Process lesson.** Every one of these five was found by a frame-by-frame probe
+printing both actors' positions, states and attack frames side by side, and none
+was found by reasoning about the failing assertion. Four rounds of tuning were
+spent before the first measurement. *Measure before tuning* — and when a fix
+lands, ablate it to confirm it was the fix.
+
+**Each of the five is now individually guarded**, verified by reverting each one
+in turn and confirming the suite goes red:
+
+| Mechanism | Guarded by |
+|---|---|
+| Jump cancels the attack | `the full aerial chain executes end to end` |
+| Target state independent of lock-on | same case (the finisher is unreachable without it) |
+| Authored launch float is live | `a launched actor floats at the rate its reaction authored` |
+| Airborne victims stay airborne | `the full aerial chain executes end to end` |
+| Attacker shares the descent | same case |
+
+The float case asserts the *relationship* — one float frame must change the
+victim's vertical velocity by exactly `gravity × directional × float_scale × dt`
+— rather than a number, so retuning any input cannot make it wrong while a
+hardcoded multiplier still fails it.
+
+### Two checks that were not checking
+
+- **`tools/check.sh` reported "OK — 0 class(es)" on every run.** It counted
+  `class=` in a Godot config file that writes `"class": &"Name"`, so the number
+  was always zero and the step passed unconditionally. It now asserts a floor of
+  25 registered classes.
+- **The Combat Lab's control list advertised `SOUL E` and `MANIFEST R`** beside
+  the working keys, with nothing marking them as M3 features whose keys are bound
+  and inert. A control list is a promise; listing an unimplemented key next to a
+  working one means the reader's next conclusion is that combat is broken rather
+  than unfinished. It also listed only individual buttons and none of the 26
+  authored routes, so the string game — most of what the move set *is* — was
+  invisible unless you happened to mash the right sequence.
