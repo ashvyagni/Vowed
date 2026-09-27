@@ -1,0 +1,101 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://src/actor/base/Actor.gd" id="1_khqy2"]
+[ext_resource type="Resource" path="res://data/actors/player_motion.tres" id="2_qbadd"]
+[ext_resource type="Script" path="res://src/combat/states/CombatComponent.gd" id="3_dchpj"]
+[ext_resource type="Resource" path="res://data/attacks/player_base_library.tres" id="4_od1ir"]
+[ext_resource type="Resource" path="res://data/combos/player_base_graph.tres" id="5_trbmm"]
+[ext_resource type="Script" path="res://src/actor/enemy/TrainingDummyIntent.gd" id="6_cwkf4"]
+[ext_resource type="Script" path="res://src/combat/resolve/Hurtbox.gd" id="7_wmxqe"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_jj8lq"]
+radius = 0.36
+height = 1.72
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_np1cb"]
+albedo_color = Color(0.78, 0.44, 0.4, 1)
+roughness = 0.65
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_h0o0f"]
+radius = 0.36
+height = 1.72
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_j4soy"]
+albedo_color = Color(0.901, 0.748, 0.73, 1)
+roughness = 0.5
+
+[sub_resource type="PrismMesh" id="PrismMesh_be34m"]
+size = Vector3(0.34, 0.46, 0.3)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_huefu"]
+albedo_color = Color(0.429, 0.242, 0.22000001, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_rsb2h"]
+size = Vector3(0.62, 0.07, 0.07)
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_yh7mu"]
+radius = 0.4
+height = 1.66
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_2i4u1"]
+
+[node name="TrainingDummy" type="CharacterBody3D" unique_id=837806796 node_paths=PackedStringArray("combat", "intent_source")]
+collision_layer = 8
+collision_mask = 7
+floor_snap_length = 0.35
+script = ExtResource("1_khqy2")
+actor_id = &"training_dummy"
+display_name = "Training Dummy"
+max_health = 9999.0
+max_poise = 120.0
+profile = ExtResource("2_qbadd")
+combat = NodePath("Combat")
+intent_source = NodePath("Intent")
+
+[node name="Body" type="CollisionShape3D" parent="." unique_id=1403088852]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.86, 0)
+visible = false
+shape = SubResource("CapsuleShape3D_jj8lq")
+
+[node name="Graybox" type="MeshInstance3D" parent="." unique_id=1970313339]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.86, 0)
+material_override = SubResource("StandardMaterial3D_np1cb")
+mesh = SubResource("CapsuleMesh_h0o0f")
+
+[node name="FacingMarker" type="MeshInstance3D" parent="." unique_id=1440369757]
+transform = Transform3D(1, 0, 0, 0, -4.371139e-08, 1, 0, -1, -4.371139e-08, 0, 1.18, -0.52)
+material_override = SubResource("StandardMaterial3D_j4soy")
+mesh = SubResource("PrismMesh_be34m")
+
+[node name="FacingStripe" type="MeshInstance3D" parent="." unique_id=1756966533]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.52, -0.2)
+material_override = SubResource("StandardMaterial3D_huefu")
+mesh = SubResource("BoxMesh_rsb2h")
+
+[node name="Combat" type="Node" parent="." unique_id=1955223128]
+script = ExtResource("3_dchpj")
+library = ExtResource("4_od1ir")
+graph = ExtResource("5_trbmm")
+
+[node name="Intent" type="Node" parent="." unique_id=606788529]
+script = ExtResource("6_cwkf4")
+
+[node name="Hurtbox" type="Area3D" parent="." unique_id=719255833 node_paths=PackedStringArray("combat")]
+collision_layer = 32
+collision_mask = 0
+script = ExtResource("7_wmxqe")
+combat = NodePath("../Combat")
+
+[node name="Shape" type="CollisionShape3D" parent="Hurtbox" unique_id=1575183053]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.86, 0)
+visible = false
+shape = SubResource("CapsuleShape3D_yh7mu")
+
+[node name="CameraProxy" type="StaticBody3D" parent="." unique_id=622036898]
+collision_layer = 512
+collision_mask = 0
+
+[node name="Shape" type="CollisionShape3D" parent="CameraProxy" unique_id=1079760097]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+visible = false
+shape = SubResource("SphereShape3D_2i4u1")

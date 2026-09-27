@@ -14,7 +14,7 @@ config_version=5
 config/name="Vowed"
 config/description="A martial-combat action RPG where an inherited Beast Soul changes the way you fight, in an interconnected world reacting to the legendary beings that threaten it."
 config/version="0.1.0-dev"
-run/main_scene="res://scenes/Bootstrap.tscn"
+run/main_scene="res://scenes/lab/CombatLab.tscn"
 config/features=PackedStringArray("4.7", "Forward Plus")
 boot_splash/show_image=false
 
