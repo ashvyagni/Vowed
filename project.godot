@@ -94,6 +94,7 @@ GameEvents="*res://src/core/autoload/GameEvents.gd"
 CombatClock="*res://src/core/autoload/CombatClock.gd"
 CombatDirector="*res://src/core/autoload/CombatDirector.gd"
 HitEffects="*res://src/vfx/HitEffects.gd"
+CombatAudio="*res://src/audio/CombatAudio.gd"
 
 ; --------------------------------------------------------------------------
 ; GENERATED SECTION — do not hand-edit.

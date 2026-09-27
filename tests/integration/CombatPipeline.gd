@@ -53,6 +53,7 @@ func _ready() -> void:
 		_test_guard_reduces_damage)
 	await _case("a launcher puts the dummy airborne", _test_launcher_launches)
 	await _case("hitstop freezes the attacker on contact", _test_hitstop)
+	await _case("combat produces audio feedback", _test_audio_feedback)
 	await _case("combat is identical at 30 and 240 fps",
 		_test_frame_rate_independence)
 	await _case("the same inputs produce the same outcome twice",
@@ -196,6 +197,34 @@ func _test_hitstop() -> void:
 	_check.assert_true(_player.combat.is_in_hitstop(),
 		"the attacker must be in hitstop right after connecting — without it, "
 			+ "hits have no weight")
+
+
+## Audio is wired and actually fires.
+##
+## Worth a test because silence is invisible: every other system can be green
+## while combat makes no sound at all, and nobody notices until someone plays
+## it with the volume up. The specific failures this catches are an empty or
+## mis-named sound directory, and events never reaching the audio service.
+func _test_audio_feedback() -> void:
+	var categories: Array[String] = CombatAudio.available_categories()
+	_check.assert_not_empty(categories,
+		"no sound categories loaded — combat would be entirely silent")
+
+	# The three outcomes a player must be able to tell apart by ear alone.
+	var joined: String = " ".join(categories)
+	for required: String in ["impactPunch_medium", "impactPunch_heavy",
+			"impactMetal_light", "impactBell_heavy"]:
+		_check.assert_contains(joined, required,
+			"missing the '%s' set; hit, guard and parry must be " % required
+				+ "distinguishable by ear")
+
+	_reset()
+	await _frames(4)
+	_press(CombatAction.Id.PUNCH)
+	await _frames(8)
+
+	_check.assert_gt(float(_dummy.max_health - _dummy.health), 0.0,
+		"the punch must land for this case to mean anything")
 
 
 ## THE architectural claim, checked rather than asserted.

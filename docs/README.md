@@ -23,12 +23,12 @@ each with the milestone that will create it.
 | [KNOWN_ISSUES.md](KNOWN_ISSUES.md) | Open defects and unresolved audit findings, each with an owner | ✅ Live |
 | [ASSET_LICENSES.md](ASSET_LICENSES.md) | Provenance and licence record for every external asset | ✅ Live |
 | [COMBAT.md](COMBAT.md) | Frame-data model, combo graph, cancel rules, defence, air combat | ✅ Live |
+| [AUDIO.md](AUDIO.md) | Bus layout, combat SFX design, adaptive music plan | ✅ Live |
 
 ## Planned
 
 | Document | Purpose | Created at |
 |---|---|---|
-| `AUDIO.md` | Adaptive music architecture, combat feedback sound design | M3 |
 | `WORLD.md` | World geography, regions, traversal, streaming contract | M4 |
 | `QUESTS.md` | Quest system and authored quest content | M6 |
 | `LORE_BIBLE.md` | Canonical world history, myth, races, Beasts, terminology | M6 |
