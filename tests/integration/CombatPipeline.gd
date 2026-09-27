@@ -53,6 +53,10 @@ func _ready() -> void:
 		_test_guard_reduces_damage)
 	await _case("a launcher puts the dummy airborne", _test_launcher_launches)
 	await _case("hitstop freezes the attacker on contact", _test_hitstop)
+	await _case("combat is identical at 30 and 240 fps",
+		_test_frame_rate_independence)
+	await _case("the same inputs produce the same outcome twice",
+		_test_determinism)
 
 	_report()
 
@@ -184,6 +188,78 @@ func _test_hitstop() -> void:
 	_check.assert_true(_player.combat.is_in_hitstop(),
 		"the attacker must be in hitstop right after connecting — without it, "
 			+ "hits have no weight")
+
+
+## THE architectural claim, checked rather than asserted.
+##
+## docs/TECH_STACK.md §5.1 locks a fixed 60 Hz logical tick with animation slaved
+## to the frame counter, and M1's exit criteria require that combat run
+## identically at any render rate. This is the test that makes that a fact.
+##
+## What it actually guards against is combat logic leaking into `_process` or
+## reading `delta`. Both are easy mistakes, and both produce timing that drifts
+## with frame rate in a way that is nearly impossible to diagnose from play —
+## the symptom is "combos feel inconsistent", not a crash.
+func _test_frame_rate_independence() -> void:
+	var slow: Dictionary = await _run_scripted_sequence(30)
+	var fast: Dictionary = await _run_scripted_sequence(240)
+
+	_check.assert_eq(slow["combo"], fast["combo"],
+		"combo length differed between 30 and 240 fps (%d vs %d) — combat "
+			% [slow["combo"], fast["combo"]]
+			+ "timing is leaking into the render rate")
+	_check.assert_almost_eq(float(slow["damage"]), float(fast["damage"]), 0.01,
+		"damage differed between 30 and 240 fps (%.2f vs %.2f)"
+			% [slow["damage"], fast["damage"]])
+	_check.assert_eq(slow["combat_frames"], fast["combat_frames"],
+		"the clock advanced a different number of logical frames at 30 vs 240 "
+			+ "fps (%d vs %d) — the tick is not fixed"
+			% [slow["combat_frames"], fast["combat_frames"]])
+
+
+## Determinism: identical inputs must produce an identical outcome.
+##
+## The property the whole combat model is built to have — combat as a pure
+## function of (state, input, frame). Without it, a reported bug cannot be
+## reproduced from an input log and frame data cannot be tuned with confidence,
+## because the same test may simply behave differently next time.
+func _test_determinism() -> void:
+	var first: Dictionary = await _run_scripted_sequence(0)
+	var second: Dictionary = await _run_scripted_sequence(0)
+
+	_check.assert_eq(first["combo"], second["combo"],
+		"identical inputs gave different combo lengths (%d vs %d)"
+			% [first["combo"], second["combo"]])
+	_check.assert_almost_eq(float(first["damage"]), float(second["damage"]),
+		0.001, "identical inputs gave different damage (%.4f vs %.4f)"
+			% [first["damage"], second["damage"]])
+
+
+## Run one fixed input sequence at a given render cap and report the outcome.
+## `max_fps` of 0 means uncapped.
+func _run_scripted_sequence(max_fps: int) -> Dictionary:
+	Engine.max_fps = max_fps
+	_reset()
+	await _frames(6)
+
+	var start_frame: int = CombatClock.frame
+	var start_health: float = _dummy.health
+
+	_press(CombatAction.Id.PUNCH)
+	await _frames(8)
+	_press(CombatAction.Id.PUNCH)
+	await _frames(10)
+	_press(CombatAction.Id.PUNCH)
+	await _frames(16)
+
+	var outcome: Dictionary = {
+		"combo": _player.combat.combo_length,
+		"damage": start_health - _dummy.health,
+		"combat_frames": CombatClock.frame - start_frame,
+	}
+
+	Engine.max_fps = 0
+	return outcome
 
 
 # --- harness ----------------------------------------------------------------

@@ -22,12 +22,12 @@ each with the milestone that will create it.
 | [AUDITS.md](AUDITS.md) | Milestone audit records against the fixed 13-point checklist | ✅ Live |
 | [KNOWN_ISSUES.md](KNOWN_ISSUES.md) | Open defects and unresolved audit findings, each with an owner | ✅ Live |
 | [ASSET_LICENSES.md](ASSET_LICENSES.md) | Provenance and licence record for every external asset | ✅ Live |
+| [COMBAT.md](COMBAT.md) | Frame-data model, combo graph, cancel rules, defence, air combat | ✅ Live |
 
 ## Planned
 
 | Document | Purpose | Created at |
 |---|---|---|
-| `COMBAT.md` | Frame-data model, combo graph, cancel rules, defence, air combat | M1 |
 | `AUDIO.md` | Adaptive music architecture, combat feedback sound design | M3 |
 | `WORLD.md` | World geography, regions, traversal, streaming contract | M4 |
 | `QUESTS.md` | Quest system and authored quest content | M6 |
