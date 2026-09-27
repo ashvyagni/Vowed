@@ -307,6 +307,48 @@ func _build_attacks() -> void:
 		+ "through startup, crumples on hit — the payoff for blocking well."
 
 
+# --- animation mapping ------------------------------------------------------
+#
+# Clip lengths and IMPACT times are measured, not guessed —
+# `godot --headless --path . res://tools/ImpactProbe.tscn` samples the striking
+# limb frame by frame and reports where it is furthest forward.
+#
+# Re-measure and update these if the animation set is ever replaced.
+
+const CLIP_JAB: Array = ["Punch_Jab", 0.833, 0.233]
+const CLIP_CROSS: Array = ["Punch_Cross", 1.000, 0.300]
+const CLIP_SWING: Array = ["Sword_Attack", 1.500, 0.267]
+const CLIP_THRUST: Array = ["Spell_Simple_Shoot", 0.500, 0.150]
+
+
+## Map a clip onto an attack so the animation's IMPACT lands on the attack's
+## first ACTIVE frame.
+##
+## The attack's progress (0..1) maps linearly onto [anim_start, anim_end], so
+## placing the window is the whole job: solve for the start that puts `impact`
+## at the moment the hitbox goes live. Without this the hit reads as early or
+## late regardless of how correct the frame data is.
+##
+## `placeholder` marks a clip that does not depict the attack — recorded as data
+## so the gap stays visible and countable rather than half-remembered.
+func _anim(attack: AttackData, clip: Array, placeholder: bool = false,
+		coverage: float = 0.8) -> void:
+	var name: String = clip[0]
+	var length: float = clip[1]
+	var impact: float = clip[2]
+
+	attack.animation = StringName(name)
+	attack.anim_is_placeholder = placeholder
+
+	var total: int = maxi(1, attack.total_frames() - 1)
+	var progress_at_impact: float = float(attack.startup) / float(total)
+
+	var span: float = length * coverage
+	var start: float = clampf(impact - span * progress_at_impact, 0.0, length)
+	attack.anim_start = start
+	attack.anim_end = minf(start + span, length)
+
+
 # --- builders ---------------------------------------------------------------
 
 func _attack(id: StringName, display: String, category: CombatTypes.Category,
@@ -369,7 +411,37 @@ func _motion(a: AttackData, frame: int, velocity: Vector3,
 	a.motion.append(m)
 
 
+## Bind every attack to a clip.
+##
+## HONEST STATE OF THE ASSET SET: the free tier of the Universal Animation
+## Library contains NO KICK ANIMATIONS AT ALL. Kick is half this game's input
+## language (J), so all eight kick-family attacks are mapped to `Sword_Attack`
+## — a big committed arm swing — purely so they have readable motion instead of
+## a frozen bind pose. They are flagged as placeholders and counted in the
+## report, because a known gap that is measured is manageable and one that is
+## forgotten is not.
+func _bind_animations() -> void:
+	# --- punches: genuinely matching motion ---
+	_anim(_attacks[&"jab_1"], CLIP_JAB)
+	_anim(_attacks[&"jab_2"], CLIP_CROSS)
+	_anim(_attacks[&"straight"], CLIP_CROSS, false, 0.95)
+	_anim(_attacks[&"air_punch"], CLIP_JAB)
+	_anim(_attacks[&"dash_punch"], CLIP_CROSS)
+	_anim(_attacks[&"counter_palm"], CLIP_JAB)
+	# A forward thrust reads convincingly as a lunging palm.
+	_anim(_attacks[&"lunge_punch"], CLIP_THRUST)
+
+	# --- placeholders: no matching motion exists in the free set ---
+	# An uppercut is a rising strike; a jab is not. Marked as wrong.
+	_anim(_attacks[&"uppercut"], CLIP_SWING, true, 0.95)
+	for kick_id: StringName in [&"low_kick", &"roundhouse", &"axe_kick",
+			&"spin_kick", &"sweep", &"air_kick", &"dive_kick", &"dash_kick"]:
+		_anim(_attacks[kick_id], CLIP_SWING, true)
+
+
 func _build_library() -> void:
+	_bind_animations()
+
 	_library = AttackLibrary.new()
 	_library.id = &"player_base"
 	_library.display_name = "Player — base Taijutsu"
@@ -517,6 +589,21 @@ func _report() -> void:
 
 	var problems: PackedStringArray = _library.validate()
 	problems.append_array(_graph.validate(_library.attack_ids()))
+
+	var placeholders: PackedStringArray = []
+	for attack: AttackData in _library.all_attacks():
+		if attack.anim_is_placeholder:
+			placeholders.append(str(attack.id))
+
+	if not placeholders.is_empty():
+		print("PLACEHOLDER ANIMATIONS: %d of %d attacks do not have matching "
+			% [placeholders.size(), _library.count()]
+			+ "motion in the current asset set.")
+		print("  %s" % ", ".join(placeholders))
+		print("  The free Universal Animation Library contains no kicks. These "
+			+ "play a sword swing so they read as SOMETHING rather than a")
+		print("  frozen pose. See docs/ASSET_LICENSES.md.")
+		print("")
 
 	if problems.is_empty():
 		print("VALIDATION OK — %d attacks, %d routes, no problems."

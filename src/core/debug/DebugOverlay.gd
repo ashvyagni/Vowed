@@ -36,6 +36,11 @@ const BUDGET_FRAME_MS: float = 16.6
 const BUDGET_DRAW_CALLS: int = 2000
 const BUDGET_PROCESS_MB: float = 3500.0
 
+## Physics-step budget. The whole combat pipeline runs inside the physics tick,
+## so this is the number that actually moves when combat or AI regresses — and
+## unlike frame time it is never inflated by waiting for the display.
+const BUDGET_PHYSICS_MS: float = 6.0
+
 const PANEL_WIDTH: int = 470
 
 var _visible_panels: bool = true
@@ -437,19 +442,39 @@ func _on_assertion(source: String, message: String) -> void:
 # --- performance panel ------------------------------------------------------
 
 func _draw_perf() -> void:
-	var frame_ms: float = 1000.0 / maxf(1.0, Engine.get_frames_per_second())
+	var fps: float = maxf(1.0, Engine.get_frames_per_second())
+	var frame_ms: float = 1000.0 / fps
 	var draw_calls: int = RenderingServer.get_rendering_info(
 		RenderingServer.RENDERING_INFO_TOTAL_DRAW_CALLS_IN_FRAME)
 	var process_mb: float = float(OS.get_static_memory_usage()) / 1048576.0
 	var video_mb: float = float(RenderingServer.get_rendering_info(
 		RenderingServer.RENDERING_INFO_VIDEO_MEM_USED)) / 1048576.0
+	var physics_ms: float = Performance.get_monitor(
+		Performance.TIME_PHYSICS_PROCESS) * 1000.0
 
 	var lines: PackedStringArray = []
 	lines.append("[b]PERFORMANCE[/b]   budgets from docs/TECH_STACK.md")
 	lines.append("")
-	lines.append("frame   %s   (%d fps)" % [
-		_budget(frame_ms, BUDGET_FRAME_MS, "%.1f ms"),
-		int(Engine.get_frames_per_second())])
+
+	# Frame time is only a COST when the frame is not simply waiting for the
+	# display. On this machine (macOS/Metal) presentation is pinned to the
+	# monitor's refresh whatever the vsync setting says, so raw frame time sits
+	# permanently at the refresh period. Colouring that red would mark a healthy
+	# frame as over budget forever — and a performance panel that is always red
+	# is a panel nobody reads.
+	if _is_display_capped(fps):
+		lines.append("frame   [color=#8899aa]%.1f ms (%d fps, vsync-capped)[/color]"
+			% [frame_ms, int(fps)])
+		lines.append("        [color=#667788]raw cost hidden by the display "
+			+ "cap — judge CPU below[/color]")
+	else:
+		lines.append("frame   %s   (%d fps)" % [
+			_budget(frame_ms, BUDGET_FRAME_MS, "%.1f ms"), int(fps)])
+
+	# Physics time is the honest CPU number: it is real work and never absorbs
+	# the present-wait, so it is what actually reveals a combat/AI regression.
+	lines.append("cpu     %s physics" % _budget(physics_ms, BUDGET_PHYSICS_MS,
+		"%.2f ms"))
 	lines.append("draws   %s        memory %s" % [
 		_budget(float(draw_calls), float(BUDGET_DRAW_CALLS), "%.0f"),
 		_budget(process_mb, BUDGET_PROCESS_MB, "%.0f MB")])
@@ -457,6 +482,15 @@ func _draw_perf() -> void:
 		video_mb, CombatDirector.actor_count()])
 
 	_perf_label.text = "\n".join(lines)
+
+
+## Is the frame rate sitting on the display's refresh rate rather than on a
+## real cost? Compared with tolerance because the measured value jitters.
+func _is_display_capped(fps: float) -> bool:
+	var refresh: float = DisplayServer.screen_get_refresh_rate()
+	if refresh <= 0.0:
+		refresh = 60.0
+	return absf(fps - refresh) <= maxf(1.5, refresh * 0.03)
 
 
 ## Colour a measurement against its budget. Amber from 80%, red past it — an

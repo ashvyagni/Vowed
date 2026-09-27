@@ -17,12 +17,34 @@
     "license": "SPDX identifier where one exists, else exact licence name",
     "license_url": "URL of the licence terms as they stood at acquisition",
     "acquired": "ISO-8601 date",
-    "files": ["repo-relative paths of every file from this asset"],
+    "files": [
+      "repo-relative paths of every file from this asset"
+    ],
     "modifications": "what was changed (retarget, rescale, reauthored materials), or 'none'",
     "attribution_required": "boolean",
     "attribution_text": "exact credit line to render, when required",
-    "commercial_use": "boolean — must be true to ship",
+    "commercial_use": "boolean \u2014 must be true to ship",
     "notes": "anything a future reader needs, e.g. 'pack mixes licences'"
   },
-  "assets": []
+  "assets": [
+    {
+      "id": "quaternius-universal-animation-library",
+      "name": "Universal Animation Library (Standard / free tier)",
+      "creator": "Quaternius (Tom Laulhet)",
+      "source": "Quaternius",
+      "url": "https://quaternius.itch.io/universal-animation-library",
+      "license": "CC0-1.0",
+      "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "acquired": "2026-09-27",
+      "files": [
+        "assets/animations/quaternius_universal_animation_library/AnimationLibrary_Godot_Standard.gltf",
+        "assets/animations/quaternius_universal_animation_library/AnimationLibrary_Godot_Standard.bin"
+      ],
+      "modifications": "none yet; animations are retimed at runtime by seeking to the combat frame counter rather than being re-exported",
+      "attribution_required": false,
+      "attribution_text": "Animations by Quaternius (quaternius.com), CC0",
+      "commercial_use": true,
+      "notes": "CC0 verified on the creator's own itch.io page and in the bundled LICENSE file (CC0 1.0 Universal full text), not from a search snippet. Obtained via the CC0 mirror at github.com/J-Ponzo/gltf-universal-animation-library, which CC0 expressly permits; the canonical source is the itch.io page above. Bundles a rigged 'Mannequin' mesh (53 joints, Rigify DEF- naming, 1.83 m) used as the project's graybox character. FREE TIER ONLY: 46 animations. Contains NO kick animations, which is half this game's input language - see docs/ASSET_LICENSES.md."
+    }
+  ]
 }

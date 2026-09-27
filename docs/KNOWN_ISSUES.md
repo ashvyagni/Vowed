@@ -14,6 +14,7 @@ live with this" is distinguishable from "we forgot about this".
 
 | ID | Item | Severity | Owner |
 |---|---|---|---|
+| **I2** | On this machine (macOS 26 / Metal / M3) presentation is pinned to the 60 Hz display refresh even with `window/vsync/vsync_mode=0`, and `DisplayServer.window_get_vsync_mode()` reporting DISABLED. Raw frame time therefore always reads ~16.7 ms. | Low | M15 |
 | **I1** | Headless runs print `N ObjectDB instances were leaked at exit` / `N resources still in use at exit` after a successful run. N grows with the number of scripts, not with runtime objects. | Low | M16 |
 
 **I1 detail.** Investigated rather than assumed. The leaked objects are
@@ -35,6 +36,23 @@ cost is a blind spot. Revisit at M16 when the full QA pass decides how test
 output should be presented.
 
 ---
+
+**I2 detail.** Measured rather than assumed: with 4 skinned actors the scene
+draws 73 calls / 140k primitives and spends **1.6 ms** in the physics step, yet
+reports 60.0 fps and ~17 ms "process" time. The present-wait is being attributed
+to process time. Forcing `Engine.max_fps = 0` and
+`DisplayServer.window_set_vsync_mode(VSYNC_DISABLED)` at runtime does not lift
+the cap.
+
+Consequence for tooling: the debug overlay now detects the display refresh rate
+and reports frame time as *vsync-capped* in neutral colour rather than red, and
+shows **physics-step time** as the honest CPU figure — that is real work, never
+inflated by waiting, and the number that actually moves when combat or AI
+regresses. A performance panel that is permanently red is a panel nobody reads.
+
+Real GPU-cost profiling needs a tool that can see past the compositor, which is
+an M15 concern. Until then, physics time and draw calls are the meaningful
+signals.
 
 ## Accepted (deliberate, not forgotten)
 

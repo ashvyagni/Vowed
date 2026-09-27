@@ -44,6 +44,7 @@ signal died()
 @export var combat: CombatComponent
 @export var intent_source: IntentSource
 @export var model: Node3D
+@export var animator: CombatAnimator
 
 
 var health: float = 0.0
@@ -84,6 +85,8 @@ func _ready() -> void:
 		combat = _find_child_of_type(&"CombatComponent") as CombatComponent
 	if intent_source == null:
 		intent_source = _find_child_of_type(&"IntentSource") as IntentSource
+	if animator == null:
+		animator = _find_child_of_type(&"CombatAnimator") as CombatAnimator
 
 	if combat == null:
 		GameEvents.report_assertion("Actor",
@@ -242,6 +245,11 @@ func phase_combat() -> void:
 	combat.grounded = is_on_floor()
 	combat.tick()
 	_recover_poise()
+
+	# Animation is driven AFTER combat has advanced, so the pose shown is the
+	# pose for this frame's combat state rather than the previous one's.
+	if animator != null:
+		animator.update()
 
 
 func _recover_poise() -> void:

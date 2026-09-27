@@ -35,6 +35,7 @@ const L_CAMERA_COLLIDE: int = 1 << 9
 const PLAYER_PATH: String = "res://scenes/actors/Player.tscn"
 const DUMMY_PATH: String = "res://scenes/actors/TrainingDummy.tscn"
 const LAB_PATH: String = "res://scenes/lab/CombatLab.tscn"
+const CHARACTER_LIBRARY: String = "res://assets/animations/quaternius_universal_animation_library/AnimationLibrary_Godot_Standard.gltf"
 
 var _written: int = 0
 
@@ -64,7 +65,8 @@ func _write_player() -> void:
 	root.profile = load("res://data/actors/player_motion.tres") as MotionProfile
 
 	_add_body_shape(root, root)
-	_add_graybox_mesh(root, root, Color(0.42, 0.58, 0.78))
+	var player_model: Node3D = _add_character(root, root,
+		Color(0.42, 0.58, 0.78))
 
 	var combat := CombatComponent.new()
 	combat.name = "Combat"
@@ -81,6 +83,7 @@ func _write_player() -> void:
 	intent.owner = root
 	root.intent_source = intent
 
+	_add_animator(root, root, player_model)
 	_add_hurtbox(root, root, L_PLAYER_HURTBOX, combat)
 	_add_camera_proxy(root, root)
 
@@ -104,7 +107,8 @@ func _write_dummy() -> void:
 	root.profile = load("res://data/actors/player_motion.tres") as MotionProfile
 
 	_add_body_shape(root, root)
-	_add_graybox_mesh(root, root, Color(0.78, 0.44, 0.40))
+	var dummy_model: Node3D = _add_character(root, root,
+		Color(0.78, 0.44, 0.40))
 
 	var combat := CombatComponent.new()
 	combat.name = "Combat"
@@ -126,6 +130,7 @@ func _write_dummy() -> void:
 	intent.owner = root
 	root.intent_source = intent
 
+	_add_animator(root, root, dummy_model)
 	_add_hurtbox(root, root, L_ENEMY_HURTBOX, combat)
 	_add_camera_proxy(root, root)
 
@@ -148,62 +153,69 @@ func _add_body_shape(parent: Node, owner_node: Node) -> void:
 	collision.owner = owner_node
 
 
-## Graybox stand-in geometry.
+## The rigged character: Quaternius' CC0 "Mannequin" plus its animation set.
 ##
-## Primitives, not asset-pack models, and that is the correct order of work:
-## combat must be proven with readable placeholder shapes before any art is
-## committed, or art gets made for mechanics that then change. A forward marker
-## is included because facing is a combat-critical property that an unadorned
-## capsule cannot communicate.
-func _add_graybox_mesh(parent: Node, owner_node: Node, tint: Color) -> void:
-	var body := MeshInstance3D.new()
-	body.name = "Graybox"
-	var capsule := CapsuleMesh.new()
-	capsule.radius = 0.36
-	capsule.height = 1.72
-	body.mesh = capsule
-	body.position = Vector3(0.0, 0.86, 0.0)
-	var material := StandardMaterial3D.new()
-	material.albedo_color = tint
-	material.roughness = 0.65
-	body.material_override = material
-	parent.add_child(body)
-	body.owner = owner_node
+## Still a GRAYBOX in intent — an untextured mannequin, not the game's visual
+## identity — but an ANIMATED one, which is the part that actually matters here.
+## A capsule cannot show a wind-up, an extension or a recoil, so combat feel
+## cannot be judged on one however correct the frame data is.
+##
+## Tinted per actor so player and enemy stay instantly distinguishable, which a
+## shared untextured mesh otherwise loses.
+func _add_character(parent: Node, owner_node: Node, tint: Color) -> Node3D:
+	var packed: PackedScene = load(CHARACTER_LIBRARY) as PackedScene
+	if packed == null:
+		push_error("could not load the character library at %s" % CHARACTER_LIBRARY)
+		return null
 
-	# A forward-pointing wedge. Facing is a combat-critical property — spacing,
-	# whiff-punishing and directional routes all depend on reading it — and an
-	# unadorned capsule communicates nothing about which way it is pointing.
-	# Sized and offset to sit clearly PROUD of the 0.36 m capsule radius; an
-	# earlier version was tucked inside it and therefore invisible, which defeats
-	# the entire purpose.
-	var marker := MeshInstance3D.new()
-	marker.name = "FacingMarker"
-	var wedge := PrismMesh.new()
-	wedge.size = Vector3(0.34, 0.46, 0.30)
-	marker.mesh = wedge
-	# -90 deg about X maps the prism's +Y apex onto -Z, which is forward.
-	marker.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
-	marker.position = Vector3(0.0, 1.18, -0.52)
-	var marker_material := StandardMaterial3D.new()
-	marker_material.albedo_color = tint.lightened(0.55)
-	marker_material.roughness = 0.5
-	marker.material_override = marker_material
-	parent.add_child(marker)
-	marker.owner = owner_node
+	var model: Node3D = packed.instantiate() as Node3D
+	model.name = "Model"
+	parent.add_child(model)
+	model.owner = owner_node
+	# Every node inside the instanced subtree needs an owner too, or the scene
+	# saves as an empty shell.
+	_claim(model, owner_node)
 
-	# A shoulder stripe, so facing stays readable from directly above or behind
-	# where the wedge foreshortens to nothing.
-	var stripe := MeshInstance3D.new()
-	stripe.name = "FacingStripe"
-	var bar := BoxMesh.new()
-	bar.size = Vector3(0.62, 0.07, 0.07)
-	stripe.mesh = bar
-	stripe.position = Vector3(0.0, 1.52, -0.20)
-	var stripe_material := StandardMaterial3D.new()
-	stripe_material.albedo_color = tint.darkened(0.45)
-	stripe.material_override = stripe_material
-	parent.add_child(stripe)
-	stripe.owner = owner_node
+	# The library mesh is 1.83 m; the collision capsule is 1.72 m. Scale so the
+	# visual and the hurtbox agree — a model that does not match its own hurtbox
+	# is a readability failure, and players will blame the hit detection.
+	model.scale = Vector3.ONE * (1.72 / 1.83)
+
+	var tint_material := StandardMaterial3D.new()
+	tint_material.albedo_color = tint
+	tint_material.roughness = 0.72
+	for mesh: MeshInstance3D in _find_meshes(model):
+		mesh.material_override = tint_material
+
+	return model
+
+
+func _claim(node: Node, owner_node: Node) -> void:
+	for child: Node in node.get_children():
+		child.owner = owner_node
+		_claim(child, owner_node)
+
+
+func _find_meshes(node: Node) -> Array[MeshInstance3D]:
+	var found: Array[MeshInstance3D] = []
+	if node is MeshInstance3D:
+		found.append(node as MeshInstance3D)
+	for child: Node in node.get_children():
+		found.append_array(_find_meshes(child))
+	return found
+
+
+## Binds the animation set to combat state. See src/actor/base/CombatAnimator.gd
+## for why attacks are seeked while locomotion plays normally.
+func _add_animator(parent: Node, owner_node: Node, model: Node3D) -> void:
+	var animator := CombatAnimator.new()
+	animator.name = "Animator"
+	animator.actor = parent as Actor
+	if model != null:
+		animator.animation_player = model.get_node_or_null("AnimationPlayer") \
+			as AnimationPlayer
+	parent.add_child(animator)
+	animator.owner = owner_node
 
 
 func _add_hurtbox(parent: Node, owner_node: Node, layer: int,

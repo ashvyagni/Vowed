@@ -39,6 +39,49 @@ extends Resource
 ## match the combat frame — it never drives timing.
 @export var animation: StringName = &""
 
+## Which slice of that animation maps onto this attack, in SECONDS.
+## `anim_end` of -1 means "to the end of the animation".
+##
+## Source animations are almost never the same length as the attack that uses
+## them — Punch_Jab is 50 frames while jab_1 is 14 — so the attack's progress
+## (0..1) is mapped linearly onto this window.
+##
+## Authored rather than stretched blindly, because the designer's real job here
+## is to ALIGN THE IMPACT: the moment the fist extends in the animation should
+## land on the attack's active frames. Get that wrong and the hit reads as
+## early or late no matter how correct the frame data is — which is precisely
+## the "combat feels off" complaint that is impossible to diagnose from
+## numbers alone.
+@export var anim_start: float = 0.0
+@export var anim_end: float = -1.0
+
+## Playback speed multiplier applied on top of the window mapping. Mainly for
+## reusing one animation across a fast and a slow variant of the same motion.
+@export_range(0.1, 4.0, 0.05) var anim_speed: float = 1.0
+
+## True when `animation` is a stand-in that does not depict this attack —
+## e.g. a sword swing standing in for a kick because no kick animation exists
+## in the asset set yet.
+##
+## Recorded as data so the gap is VISIBLE and countable rather than a thing
+## someone half-remembers. `tools/validate_content.gd` reports the total.
+@export var anim_is_placeholder: bool = false
+
+
+## Map an attack-relative frame onto a playback position in the animation,
+## in seconds. `animation_length` is the source clip's length.
+func animation_time(attack_frame: int, animation_length: float) -> float:
+	var start: float = clampf(anim_start, 0.0, animation_length)
+	var finish: float = animation_length if anim_end < 0.0 \
+		else clampf(anim_end, start, animation_length)
+	var span: float = finish - start
+	if span <= 0.0:
+		return start
+
+	var total: int = maxi(1, total_frames() - 1)
+	var progress: float = clampf(float(attack_frame) / float(total), 0.0, 1.0)
+	return start + span * progress * anim_speed
+
 @export_multiline var designer_notes: String = ""
 
 
@@ -244,7 +287,11 @@ func validate() -> PackedStringArray:
 	if id == &"":
 		problems.append("%s: id is empty — combo edges cannot reference it" % label)
 	if animation == &"":
-		problems.append("%s: animation is empty" % label)
+		problems.append("%s: animation is empty — the actor would hold its "
+			% label + "bind pose for the whole attack")
+	if anim_end >= 0.0 and anim_end <= anim_start:
+		problems.append("%s: anim_end (%.3f) is not after anim_start (%.3f), "
+			% [label, anim_end, anim_start] + "so the clip would not advance")
 	if on_hit == null:
 		problems.append("%s: on_hit reaction is null — a connecting hit would "
 			% label + "have no effect on the victim")

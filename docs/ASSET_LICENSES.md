@@ -92,15 +92,38 @@ Verified as reliably licensed, to be re-checked per asset regardless:
 
 ## Asset register
 
-**Current count: 0.**
+**Current count: 1.**
 
-No external assets have been acquired. The register and its machine-readable
-counterpart exist *before* the first asset, which is the only arrangement in
-which this discipline stays cheap.
+| ID | Asset | Creator | Source | Licence | Acquired | Modifications | Attribution | Commercial |
+|---|---|---|---|---|---|---|---|---|
+| `quaternius-universal-animation-library` | Universal Animation Library (free tier) + bundled `Mannequin` rig | Quaternius (Tom Laulhet) | [itch.io](https://quaternius.itch.io/universal-animation-library) | **CC0-1.0** | 2026-09-27 | None. Retimed at runtime by seeking, never re-exported | Not required (credited anyway) | ✅ Yes |
 
-| ID | Asset | Creator | Source URL | Licence | Acquired | Modifications | Attribution required | Commercial OK | Notes |
-|---|---|---|---|---|---|---|---|---|---|
-| — | — | — | — | — | — | — | — | — | *empty* |
+**Verification:** CC0 confirmed on the creator's own itch.io page *and* in the
+full `CC0 1.0 Universal` legal text bundled with the download, archived at
+[`assets/licenses/quaternius_universal_animation_library_CC0.txt`](../assets/licenses/quaternius_universal_animation_library_CC0.txt).
+Not taken from a search snippet.
+
+**Obtained via** the CC0 mirror at `github.com/J-Ponzo/gltf-universal-animation-library`,
+which CC0 expressly permits — redistribution is the licence's entire point. The
+canonical source is the itch.io page above and is what the register cites.
+
+### ⚠️ Known gap: no kick animations
+
+The free tier is **46 animations and contains no kicks whatsoever**. Kick is
+half this game's input language (`J`), so **9 of 16 attacks currently play a
+placeholder**:
+
+`low_kick`, `roundhouse`, `uppercut`, `axe_kick`, `sweep`, `spin_kick`,
+`air_kick`, `dive_kick`, `dash_kick`
+
+They are mapped to `Sword_Attack` — a large committed arm swing — so they read as
+*some* deliberate motion rather than a frozen bind pose. Each is flagged
+`anim_is_placeholder = true` in its resource, and the move-set bootstrap prints
+the count on every run, so the gap stays **measured rather than half-remembered**.
+
+Resolving it needs a set that actually contains kicks — the PRO tier of the same
+CC0 pack (120+ animations including combat combos) is the obvious candidate, and
+carries the same licence, so nothing about the commercial position changes.
 
 The authoritative machine-readable record is
 [`assets/licenses/assets.json`](../assets/licenses/assets.json), validated by
