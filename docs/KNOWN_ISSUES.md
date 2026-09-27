@@ -15,27 +15,31 @@ live with this" is distinguishable from "we forgot about this".
 | ID | Item | Severity | Owner |
 |---|---|---|---|
 | **I2** | On this machine (macOS 26 / Metal / M3) presentation is pinned to the 60 Hz display refresh even with `window/vsync/vsync_mode=0`, and `DisplayServer.window_get_vsync_mode()` reporting DISABLED. Raw frame time therefore always reads ~16.7 ms. | Low | M15 |
-| **I1** | Headless runs print `N ObjectDB instances were leaked at exit` / `N resources still in use at exit` after a successful run. N grows with the number of scripts, not with runtime objects. | Low | M16 |
+| **I1** | Every run prints `N ObjectDB instances were leaked at exit` / `N resources still in use at exit` / leaked RIDs on quit. N scales with loaded CONTENT, not with runtime lifetime. | Low | M16 |
 
-**I1 detail.** Investigated rather than assumed. The leaked objects are
-**`GDScript` resources** — one per script declaring a typed array of a custom
-class (`Array[ComboEdge]` and similar) — not leaked instances of those classes.
-Godot's script cache retains such a script to process exit. The count was 3 when
-first observed and rises as more such scripts are added; it does **not** rise
-during play.
+**I1 detail.** Investigated with `--verbose` rather than assumed. As of the
+animated build the leaked set is, precisely:
 
-Bounded by the number of scripts declaring typed arrays of custom classes, not by
-runtime object count, so it is **not a runtime leak** and does not grow during
-play. Confirmed not to be the graph's lazily-built index: clearing it changes
-nothing.
+- **46 `Animation` resources**, each at refcount 5 — the 46 clips of the shared
+  animation library, referenced by the 4 actors' `AnimationPlayer`s plus the
+  cached `PackedScene`.
+- The 4 instantiated character subtrees (`Skeleton3D`, `AnimationPlayer`,
+  `MeshInstance3D`, `Node3D`) and their materials, mesh and skin.
+- 7 `GDScript` resources for the scripts declaring typed arrays of custom
+  classes (`Array[ComboEdge]` and similar), which Godot's script cache retains.
 
-Deliberately **not** filtered out of the runner's output. A test command that
+So the count scales with **how much content is loaded**, not with how long the
+game runs. Nothing accumulates during play, and it is reported only at process
+exit.
+
+A fix was attempted and **reverted**: releasing the autoloads' references in
+`_exit_tree()` changed the numbers by exactly zero, because the autoloads were
+never the holder. The code was removed rather than kept, since code justified by
+a rationale that measurement disproved is debt.
+
+Still deliberately **not** filtered out of the test or run output. A command that
 strips lines matching `ERROR` would hide the next leak too, and that one might be
-real. The honest cost is two lines of noise after a green run; the alternative
-cost is a blind spot. Revisit at M16 when the full QA pass decides how test
-output should be presented.
-
----
+real.
 
 **I2 detail.** Measured rather than assumed: with 4 skinned actors the scene
 draws 73 calls / 140k primitives and spends **1.6 ms** in the physics step, yet

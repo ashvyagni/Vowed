@@ -31,9 +31,13 @@ extends Node
 @export var idle_anim: StringName = &"Idle"
 @export var walk_anim: StringName = &"Walk"
 @export var run_anim: StringName = &"Jog_Fwd"
-@export var jump_rise_anim: StringName = &"Jump_Loop"
+# NOTE: the glTF importer strips a trailing `_Loop` from clip names, so the
+# library's `Jump_Loop` is imported as `Jump`. Getting this wrong is silent in
+# every automated check but obvious the moment anyone jumps, which is why
+# referenced clips are now validated — see tests/integration/CombatPipeline.
+@export var jump_rise_anim: StringName = &"Jump"
 @export var jump_land_anim: StringName = &"Jump_Land"
-@export var fall_anim: StringName = &"Jump_Loop"
+@export var fall_anim: StringName = &"Jump"
 
 @export_group("Reaction clips")
 @export var hit_anim: StringName = &"Hit_Chest"

@@ -53,6 +53,8 @@ func _ready() -> void:
 		_test_guard_reduces_damage)
 	await _case("a launcher puts the dummy airborne", _test_launcher_launches)
 	await _case("hitstop freezes the attacker on contact", _test_hitstop)
+	await _case("every referenced animation clip exists",
+		_test_animation_clips_exist)
 	await _case("combat produces audio feedback", _test_audio_feedback)
 	await _case("combat is identical at 30 and 240 fps",
 		_test_frame_rate_independence)
@@ -197,6 +199,53 @@ func _test_hitstop() -> void:
 	_check.assert_true(_player.combat.is_in_hitstop(),
 		"the attacker must be in hitstop right after connecting — without it, "
 			+ "hits have no weight")
+
+
+## Every animation clip referenced anywhere actually exists in the rig.
+##
+## A missing clip is SILENT in every other check: the actor simply holds its
+## previous pose, the tests still pass, and nothing reports a problem until a
+## human happens to perform that exact action. Locomotion clips were referencing
+## `Jump_Loop` when the glTF importer had stripped the suffix to `Jump`, so jump
+## and fall had no animation at all — caught only because someone jumped.
+##
+## Checks both sides: the animator's locomotion and reaction clips, and every
+## attack's `animation` field.
+func _test_animation_clips_exist() -> void:
+	var animator: CombatAnimator = _player.animator
+	_check.assert_not_null(animator, "the player should have a CombatAnimator")
+	if animator == null:
+		return
+
+	var player_anim: AnimationPlayer = animator.animation_player
+	_check.assert_not_null(player_anim,
+		"the animator should have found an AnimationPlayer")
+	if player_anim == null:
+		return
+
+	# --- locomotion and reaction clips ---
+	for clip: StringName in animator.referenced_clips():
+		if clip == &"":
+			continue
+		_check.assert_true(player_anim.has_animation(String(clip)),
+			"animator references clip '%s', which the rig does not have" % clip)
+
+	# --- every attack in the move set ---
+	var library: AttackLibrary = _player.combat.library
+	_check.assert_not_null(library, "the player should have an AttackLibrary")
+	if library == null:
+		return
+
+	var missing: PackedStringArray = []
+	for attack: AttackData in library.all_attacks():
+		if attack.animation == &"":
+			missing.append("%s (empty)" % attack.id)
+		elif not player_anim.has_animation(String(attack.animation)):
+			missing.append("%s -> '%s'" % [attack.id, attack.animation])
+
+	_check.assert_empty(missing,
+		"attacks reference clips the rig does not have: %s"
+			% ", ".join(missing))
 
 
 ## Audio is wired and actually fires.

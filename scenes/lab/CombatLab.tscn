@@ -75,55 +75,55 @@ albedo_color = Color(0.4, 0.43, 0.47, 1)
 inner_radius = 9.97
 outer_radius = 10.03
 
-[node name="CombatLab" type="Node3D" unique_id=28430264]
+[node name="CombatLab" type="Node3D" unique_id=1120717133]
 script = ExtResource("1_5j436")
 
-[node name="Sun" type="DirectionalLight3D" parent="." unique_id=1365259029]
+[node name="Sun" type="DirectionalLight3D" parent="." unique_id=376144941]
 transform = Transform3D(0.76604444, 0.5065235, -0.39573956, 0, 0.6156615, 0.7880107, 0.6427876, -0.6036512, 0.47162408, 0, 0, 0)
 light_energy = 1.05
 shadow_enabled = true
 
-[node name="Environment" type="WorldEnvironment" parent="." unique_id=380103467]
+[node name="Environment" type="WorldEnvironment" parent="." unique_id=1894720880]
 environment = SubResource("Environment_8ljno")
 
-[node name="Floor" type="StaticBody3D" parent="." unique_id=1605073524]
+[node name="Floor" type="StaticBody3D" parent="." unique_id=1450413437]
 collision_mask = 0
 
-[node name="Shape" type="CollisionShape3D" parent="Floor" unique_id=1899952133]
+[node name="Shape" type="CollisionShape3D" parent="Floor" unique_id=406950731]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.2, 0)
 visible = false
 shape = SubResource("BoxShape3D_f0266")
 
-[node name="FloorMesh" type="MeshInstance3D" parent="Floor" unique_id=515902290]
+[node name="FloorMesh" type="MeshInstance3D" parent="Floor" unique_id=1767276624]
 material_override = SubResource("StandardMaterial3D_sotcw")
 mesh = SubResource("PlaneMesh_mt8ng")
 
-[node name="Marker_2m" type="MeshInstance3D" parent="." unique_id=722772000]
+[node name="Marker_2m" type="MeshInstance3D" parent="." unique_id=1497925476]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.012, 0)
 material_override = SubResource("StandardMaterial3D_jyfjp")
 mesh = SubResource("TorusMesh_oppp2")
 
-[node name="Marker_4m" type="MeshInstance3D" parent="." unique_id=425658840]
+[node name="Marker_4m" type="MeshInstance3D" parent="." unique_id=1447046087]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.012, 0)
 material_override = SubResource("StandardMaterial3D_hcydq")
 mesh = SubResource("TorusMesh_omil0")
 
-[node name="Marker_6m" type="MeshInstance3D" parent="." unique_id=668882827]
+[node name="Marker_6m" type="MeshInstance3D" parent="." unique_id=1923465382]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.012, 0)
 material_override = SubResource("StandardMaterial3D_amdt6")
 mesh = SubResource("TorusMesh_a7un7")
 
-[node name="Marker_8m" type="MeshInstance3D" parent="." unique_id=1428576459]
+[node name="Marker_8m" type="MeshInstance3D" parent="." unique_id=569829119]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.012, 0)
 material_override = SubResource("StandardMaterial3D_wo65b")
 mesh = SubResource("TorusMesh_f1cs0")
 
-[node name="Marker_10m" type="MeshInstance3D" parent="." unique_id=1690616507]
+[node name="Marker_10m" type="MeshInstance3D" parent="." unique_id=265864626]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.012, 0)
 material_override = SubResource("StandardMaterial3D_4tutt")
 mesh = SubResource("TorusMesh_mj4fi")
 
-[node name="Player" type="CharacterBody3D" parent="." unique_id=1840945679 node_paths=PackedStringArray("camera_rig", "combat", "intent_source") instance=ExtResource("2_ku7jh")]
+[node name="Player" type="CharacterBody3D" parent="." unique_id=713934236 node_paths=PackedStringArray("camera_rig", "combat", "intent_source") instance=ExtResource("2_ku7jh")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.2, 4)
 collision_layer = 4
 collision_mask = 11
@@ -139,12 +139,12 @@ profile = ExtResource("4_soy7l")
 combat = NodePath("Combat")
 intent_source = NodePath("Intent")
 
-[node name="CameraRig" type="Node3D" parent="." unique_id=448741576 node_paths=PackedStringArray("target")]
+[node name="CameraRig" type="Node3D" parent="." unique_id=1389793345 node_paths=PackedStringArray("target")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6, 4)
 script = ExtResource("5_yt6xp")
 target = NodePath("../Player")
 
-[node name="Dummy_Close" type="CharacterBody3D" parent="." unique_id=412211268 node_paths=PackedStringArray("combat", "intent_source") instance=ExtResource("6_cmmo5")]
+[node name="Dummy_Close" type="CharacterBody3D" parent="." unique_id=1584346854 node_paths=PackedStringArray("combat", "intent_source") instance=ExtResource("6_cmmo5")]
 transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, 0, 0.2, 1.6)
 collision_layer = 8
 collision_mask = 7
@@ -158,7 +158,7 @@ profile = ExtResource("4_soy7l")
 combat = NodePath("Combat")
 intent_source = NodePath("Intent")
 
-[node name="Dummy_Mid" type="CharacterBody3D" parent="." unique_id=387938464 node_paths=PackedStringArray("combat", "intent_source") instance=ExtResource("6_cmmo5")]
+[node name="Dummy_Mid" type="CharacterBody3D" parent="." unique_id=1835788998 node_paths=PackedStringArray("combat", "intent_source") instance=ExtResource("6_cmmo5")]
 transform = Transform3D(-0.8041762, 0, -0.594391, 0, 1, 0, 0.594391, 0, -0.8041762, -3.4, 0.2, -0.6)
 collision_layer = 8
 collision_mask = 7
@@ -172,7 +172,7 @@ profile = ExtResource("4_soy7l")
 combat = NodePath("Combat")
 intent_source = NodePath("Intent")
 
-[node name="Dummy_Far" type="CharacterBody3D" parent="." unique_id=794551435 node_paths=PackedStringArray("combat", "intent_source") instance=ExtResource("6_cmmo5")]
+[node name="Dummy_Far" type="CharacterBody3D" parent="." unique_id=139849391 node_paths=PackedStringArray("combat", "intent_source") instance=ExtResource("6_cmmo5")]
 transform = Transform3D(-0.8041762, 0, 0.594391, 0, 1, 0, -0.594391, 0, -0.8041762, 3.4, 0.2, -0.6)
 collision_layer = 8
 collision_mask = 7
@@ -186,10 +186,10 @@ profile = ExtResource("4_soy7l")
 combat = NodePath("Combat")
 intent_source = NodePath("Intent")
 
-[node name="HitboxVisualizer" type="Node3D" parent="." unique_id=532821552]
+[node name="HitboxVisualizer" type="Node3D" parent="." unique_id=2044888032]
 script = ExtResource("8_tgkvn")
 
-[node name="DebugOverlay" type="CanvasLayer" parent="." unique_id=669691112 node_paths=PackedStringArray("subject", "hitbox_visualizer")]
+[node name="DebugOverlay" type="CanvasLayer" parent="." unique_id=329883172 node_paths=PackedStringArray("subject", "hitbox_visualizer")]
 script = ExtResource("9_a5uws")
 subject = NodePath("../Player")
 hitbox_visualizer = NodePath("../HitboxVisualizer")
