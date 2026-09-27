@@ -76,9 +76,20 @@ func _initialize() -> void:
 # reliable intuition about what links into what.
 
 func _build_reactions() -> void:
-	_reaction(&"light", CombatTypes.ReactionKind.LIGHT, 14, 2.5, 0.10)
-	_reaction(&"medium", CombatTypes.ReactionKind.MEDIUM, 18, 3.5, 0.15)
-	_reaction(&"heavy", CombatTypes.ReactionKind.HEAVY, 24, 6.0, 0.30)
+	# PUSHBACK IS A SPACING BUDGET, not a flavour value.
+	#
+	# The integration test caught this: at 2.5 m/s, jab_1's pushback moved the
+	# target ~0.4 m during its own hitstun — past the 1.24 m reach of jab_2 — so
+	# the basic three-hit string could not physically connect. The frame data was
+	# correct and the combo was still impossible.
+	#
+	# Light attacks now barely move the target, so strings stay connected. Heavy
+	# attacks push hard, which is what ENDS a string and forces the attacker to
+	# re-establish position. Pushback is therefore the main tool deciding which
+	# attacks continue pressure and which reset neutral.
+	_reaction(&"light", CombatTypes.ReactionKind.LIGHT, 14, 0.9, 0.10)
+	_reaction(&"medium", CombatTypes.ReactionKind.MEDIUM, 18, 1.8, 0.15)
+	_reaction(&"heavy", CombatTypes.ReactionKind.HEAVY, 24, 5.5, 0.30)
 
 	# LAUNCH is the gateway to every aerial route. float_frames is what makes an
 	# air combo a SYSTEM rather than a frame-perfect trick: without hang time,
@@ -133,6 +144,9 @@ func _build_attacks() -> void:
 	_hitbox(jab_1, 4, 5, 0.42, Vector3(0.18, 1.32, 0.72))
 	_cancel(jab_1, 6, 13, CombatTypes.CancelInto.ATTACK
 		| CombatTypes.CancelInto.DASH | CombatTypes.CancelInto.GUARD)
+	# A small step in. Combined with reduced light pushback, a string closes
+	# distance slightly instead of drifting apart as it goes.
+	_motion(jab_1, 4, Vector3(0.0, 0.0, 1.5))
 	jab_1.designer_notes = "Fastest option. 4f startup keeps it reactable but " \
 		+ "barely. Safe on block; the tool for contesting neutral."
 

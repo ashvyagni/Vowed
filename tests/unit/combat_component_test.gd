@@ -380,7 +380,7 @@ func test_a_clean_hit_causes_hitstun() -> void:
 	incoming.on_hit = _reaction(20)
 
 	var result: CombatTypes.ContactResult = component.receive_hit(
-		incoming, Vector3.FORWARD, 0, 1)
+		incoming, Vector3.FORWARD)
 
 	assert_eq(result, CombatTypes.ContactResult.HIT)
 	assert_eq(component.state, CombatState.Id.HITSTUN)
@@ -392,7 +392,7 @@ func test_hitstun_lasts_exactly_the_authored_frames() -> void:
 	# and combos silently stop working.
 	var incoming: AttackData = _attack(&"enemy_jab")
 	incoming.on_hit = _reaction(20)
-	component.receive_hit(incoming, Vector3.FORWARD, 0, 1)
+	component.receive_hit(incoming, Vector3.FORWARD)
 
 	_tick(19)
 	assert_eq(component.state, CombatState.Id.HITSTUN,
@@ -410,7 +410,7 @@ func test_being_hit_interrupts_the_victims_own_attack() -> void:
 	_tick(3)
 
 	var incoming: AttackData = _attack(&"enemy_jab")
-	component.receive_hit(incoming, Vector3.FORWARD, 0, 1)
+	component.receive_hit(incoming, Vector3.FORWARD)
 
 	assert_null(component.attack, "the interrupted attack must be cleared")
 	assert_eq(component.state, CombatState.Id.HITSTUN)
@@ -421,7 +421,7 @@ func test_a_launcher_puts_the_victim_in_launched_state() -> void:
 	var incoming: AttackData = _attack(&"launcher")
 	incoming.on_hit = _reaction(30, CombatTypes.ReactionKind.LAUNCH)
 
-	component.receive_hit(incoming, Vector3.FORWARD, 0, 1)
+	component.receive_hit(incoming, Vector3.FORWARD)
 	assert_eq(component.state, CombatState.Id.LAUNCHED)
 	assert_eq(component.as_target_state(), CombatTypes.TargetState.LAUNCHED,
 		"combo edges condition on this, so state and routing must agree")
@@ -433,7 +433,7 @@ func test_knockdown_routes_through_wakeup() -> void:
 	var incoming: AttackData = _attack(&"slam")
 	incoming.on_hit = _reaction(12, CombatTypes.ReactionKind.KNOCKDOWN)
 
-	component.receive_hit(incoming, Vector3.FORWARD, 0, 1)
+	component.receive_hit(incoming, Vector3.FORWARD)
 	assert_eq(component.state, CombatState.Id.KNOCKDOWN)
 
 	_tick(12)
@@ -448,7 +448,7 @@ func test_wakeup_grants_invulnerability() -> void:
 	# Otherwise getting up would be a guaranteed free punish.
 	var incoming: AttackData = _attack(&"slam")
 	incoming.on_hit = _reaction(1, CombatTypes.ReactionKind.KNOCKDOWN)
-	component.receive_hit(incoming, Vector3.FORWARD, 0, 1)
+	component.receive_hit(incoming, Vector3.FORWARD)
 	_tick(1)
 
 	assert_eq(component.state, CombatState.Id.WAKEUP)
@@ -458,34 +458,56 @@ func test_wakeup_grants_invulnerability() -> void:
 
 # --- multi-hit protection ---------------------------------------------------
 
-func test_the_same_hit_group_connects_only_once() -> void:
-	# A moving hitbox must connect once, not once per frame. This is the
-	# "my attack does 900 damage" defect.
-	var incoming: AttackData = _attack(&"sweep")
+func test_the_same_hit_group_connects_only_once_per_attack() -> void:
+	# A moving hitbox must connect once, not once per frame — the "my attack
+	# does 900 damage" defect. Tracked on the ATTACKER, because the scope of
+	# "already hit" is one attack.
+	_attack(&"sweep")
+	_route(&"", &"sweep", CombatAction.Id.KICK)
+	component.try_action(CombatAction.Id.KICK, context)
 
-	var first: CombatTypes.ContactResult = component.receive_hit(
-		incoming, Vector3.FORWARD, 0, 1)
-	var second: CombatTypes.ContactResult = component.receive_hit(
-		incoming, Vector3.FORWARD, 0, 1)
-
-	assert_eq(first, CombatTypes.ContactResult.HIT)
-	assert_eq(second, CombatTypes.ContactResult.MISS,
+	var victim_id: int = 4242
+	assert_false(component.has_connected(victim_id, 0),
+		"nothing connected yet")
+	component.mark_connected(victim_id, 0)
+	assert_true(component.has_connected(victim_id, 0),
 		"a second contact from the same hit group must be rejected")
 
 
 func test_different_hit_groups_both_connect() -> void:
 	# A genuine multi-hit flurry must still land every hit.
-	var incoming: AttackData = _attack(&"flurry")
+	_attack(&"flurry")
+	_route(&"", &"flurry", CombatAction.Id.KICK)
+	component.try_action(CombatAction.Id.KICK, context)
 
-	var first: CombatTypes.ContactResult = component.receive_hit(
-		incoming, Vector3.FORWARD, 0, 1)
-	component.reset()
-	var second: CombatTypes.ContactResult = component.receive_hit(
-		incoming, Vector3.FORWARD, 1, 1)
-
-	assert_eq(first, CombatTypes.ContactResult.HIT)
-	assert_eq(second, CombatTypes.ContactResult.HIT,
+	var victim_id: int = 4242
+	component.mark_connected(victim_id, 0)
+	assert_false(component.has_connected(victim_id, 1),
 		"a distinct hit group is a distinct hit")
+
+
+func test_a_new_attack_may_connect_the_same_group_again() -> void:
+	# THE bug this scoping fixes. Holding the record on the victim keyed by
+	# attacker meant that once jab_1 landed with hit group 0, every later attack
+	# from the same attacker reusing group 0 was rejected forever — so a
+	# three-hit string landed exactly one hit while the routing looked perfect.
+	_attack(&"jab_1", 4, 2, 8)
+	_attack(&"jab_2", 5, 2, 10)
+	_cancel(library.get_attack(&"jab_1"), 6, 13)
+	_route(&"", &"jab_1")
+	_route(&"jab_1", &"jab_2")
+
+	var victim_id: int = 4242
+	component.try_action(CombatAction.Id.PUNCH, context)
+	component.mark_connected(victim_id, 0)
+	assert_true(component.has_connected(victim_id, 0))
+
+	_tick(7)
+	assert_true(component.try_action(CombatAction.Id.PUNCH, context),
+		"the follow-up should be routable")
+	assert_false(component.has_connected(victim_id, 0),
+		"a NEW attack must be free to connect hit group 0 on the same victim, "
+			+ "or no string can ever land more than one hit")
 
 
 # --- defence ---------------------------------------------------------------
@@ -511,7 +533,7 @@ func test_a_hit_inside_the_parry_window_is_parried() -> void:
 	var incoming: AttackData = _attack(&"enemy_jab")
 
 	var result: CombatTypes.ContactResult = component.receive_hit(
-		incoming, Vector3.FORWARD, 0, 1)
+		incoming, Vector3.FORWARD)
 	assert_eq(result, CombatTypes.ContactResult.PARRIED)
 	assert_eq(component.state, CombatState.Id.GUARDING,
 		"a successful parry leaves the defender ready to punish")
@@ -523,7 +545,7 @@ func test_a_hit_after_the_parry_window_is_merely_guarded() -> void:
 
 	var incoming: AttackData = _attack(&"enemy_jab")
 	var result: CombatTypes.ContactResult = component.receive_hit(
-		incoming, Vector3.FORWARD, 0, 1)
+		incoming, Vector3.FORWARD)
 	assert_eq(result, CombatTypes.ContactResult.GUARDED)
 
 
@@ -535,7 +557,7 @@ func test_an_unblockable_defeats_guard() -> void:
 	incoming.height = CombatTypes.Height.UNBLOCKABLE
 
 	var result: CombatTypes.ContactResult = component.receive_hit(
-		incoming, Vector3.FORWARD, 0, 1)
+		incoming, Vector3.FORWARD)
 	assert_eq(result, CombatTypes.ContactResult.HIT,
 		"an unblockable must go through guard — it is what stops turtling")
 
@@ -545,7 +567,7 @@ func test_an_unblockable_cannot_be_parried_either() -> void:
 	var incoming: AttackData = _attack(&"grab")
 	incoming.height = CombatTypes.Height.UNBLOCKABLE
 
-	assert_eq(component.receive_hit(incoming, Vector3.FORWARD, 0, 1),
+	assert_eq(component.receive_hit(incoming, Vector3.FORWARD),
 		CombatTypes.ContactResult.HIT,
 		"parrying an unblockable must not work")
 
@@ -555,7 +577,7 @@ func test_cannot_attack_while_helpless() -> void:
 	_route(&"", &"jab")
 	var incoming: AttackData = _attack(&"enemy_jab")
 	incoming.on_hit = _reaction(30)
-	component.receive_hit(incoming, Vector3.FORWARD, 0, 1)
+	component.receive_hit(incoming, Vector3.FORWARD)
 
 	assert_false(component.try_action(CombatAction.Id.PUNCH, context),
 		"an actor in hitstun must not be able to act")
@@ -591,7 +613,7 @@ func test_an_invulnerable_actor_dodges_the_hit() -> void:
 	_tick(CombatComponent.DODGE_INVULN.x)
 
 	var incoming: AttackData = _attack(&"enemy_jab")
-	assert_eq(component.receive_hit(incoming, Vector3.FORWARD, 0, 1),
+	assert_eq(component.receive_hit(incoming, Vector3.FORWARD),
 		CombatTypes.ContactResult.DODGED)
 	assert_eq(component.state, CombatState.Id.DODGING,
 		"a dodged hit must not interrupt the dodge")
@@ -609,7 +631,7 @@ func test_armour_absorbs_the_reaction_but_not_the_damage() -> void:
 
 	var incoming: AttackData = _attack(&"enemy_jab")
 	var result: CombatTypes.ContactResult = component.receive_hit(
-		incoming, Vector3.FORWARD, 0, 1)
+		incoming, Vector3.FORWARD)
 
 	assert_eq(result, CombatTypes.ContactResult.ARMORED)
 	assert_eq(component.state, CombatState.Id.ATTACKING,
@@ -625,10 +647,9 @@ func test_armour_is_consumed_and_the_next_hit_lands() -> void:
 	_tick(3)
 
 	var incoming: AttackData = _attack(&"enemy_jab")
-	component.receive_hit(incoming, Vector3.FORWARD, 0, 1)
-	# A different hit group, so multi-hit protection does not mask the result.
+	component.receive_hit(incoming, Vector3.FORWARD)
 	var second: CombatTypes.ContactResult = component.receive_hit(
-		incoming, Vector3.FORWARD, 1, 1)
+		incoming, Vector3.FORWARD)
 
 	assert_eq(second, CombatTypes.ContactResult.HIT,
 		"one armour point must absorb exactly one hit")
@@ -741,5 +762,5 @@ func test_a_dead_actor_cannot_act_or_be_hit() -> void:
 	assert_false(component.try_action(CombatAction.Id.PUNCH, context))
 
 	var incoming: AttackData = _attack(&"enemy_jab")
-	assert_eq(component.receive_hit(incoming, Vector3.FORWARD, 0, 1),
+	assert_eq(component.receive_hit(incoming, Vector3.FORWARD),
 		CombatTypes.ContactResult.MISS)

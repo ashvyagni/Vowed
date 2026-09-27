@@ -87,9 +87,17 @@ var stun_remaining: int = 0
 ## Set by the owning actor each frame, since the component does not do physics.
 var grounded: bool = true
 
-## victim instance id -> Array of hit groups already connected. This is what stops
-## a moving hitbox connecting once per frame — the classic "my attack does 900
-## damage" defect. Cleared when an attack starts.
+## victim instance id -> hit groups this attack has already connected on them.
+##
+## Held on the ATTACKER and cleared when an attack begins, because the scope of
+## "already hit" is ONE ATTACK, not a pair of actors. Holding it on the victim
+## instead — as an earlier version did — meant that once jab_1 connected with
+## hit group 0, every later attack from the same attacker using group 0 was
+## rejected forever, so a three-hit string landed exactly one hit. The routing
+## was correct and the combo was still impossible.
+##
+## Its real job is to stop a moving hitbox connecting once per frame, which is
+## the classic "my attack does 900 damage" defect.
 var _connected_groups: Dictionary = {}
 
 var _context: ComboContext = ComboContext.new()
@@ -366,31 +374,26 @@ func _finish_attack(cancelled: bool) -> void:
 ## raise. Deciding the result HERE, on the defender, is deliberate: the defender
 ## owns its own guard, parry and invulnerability state, and an attacker that
 ## decided its own hit outcomes could not be trusted.
-func receive_hit(incoming: AttackData, attacker_facing: Vector3,
-		hit_group: int, attacker_id: int) -> CombatTypes.ContactResult:
+func receive_hit(incoming: AttackData,
+		attacker_facing: Vector3) -> CombatTypes.ContactResult:
 	if state == CombatState.Id.DEAD:
 		return CombatTypes.ContactResult.MISS
 
-	# One contact per hit group per attacker, so a moving volume connects once.
-	var groups: Array = _connected_groups.get(attacker_id, [])
-	if groups.has(hit_group):
-		return CombatTypes.ContactResult.MISS
-
+	# NOTE: duplicate-contact rejection is NOT done here. It belongs to the
+	# ATTACKER, whose current attack defines the scope of "already hit" — see
+	# `has_connected()`. Doing it here made the dedupe permanent between any two
+	# actors.
 	if is_invulnerable():
 		return CombatTypes.ContactResult.DODGED
 
 	if state == CombatState.Id.PARRYING \
 			and incoming.height != CombatTypes.Height.UNBLOCKABLE:
-		_register_contact(attacker_id, hit_group)
 		# A successful parry leaves the defender in guard, ready to punish.
 		_transition(CombatState.Id.GUARDING)
 		return CombatTypes.ContactResult.PARRIED
 
 	if state == CombatState.Id.GUARDING and _guard_covers(incoming):
-		_register_contact(attacker_id, hit_group)
 		return CombatTypes.ContactResult.GUARDED
-
-	_register_contact(attacker_id, hit_group)
 
 	# Armour absorbs the reaction but not the damage, which is what lets a heavy
 	# attack be committed rather than merely slow.
@@ -442,10 +445,18 @@ func _enter_hitstun(incoming: AttackData, attacker_facing: Vector3) -> void:
 		attack_ended.emit(interrupted, true)
 
 
-func _register_contact(attacker_id: int, hit_group: int) -> void:
-	if not _connected_groups.has(attacker_id):
-		_connected_groups[attacker_id] = []
-	(_connected_groups[attacker_id] as Array).append(hit_group)
+## Has the CURRENT attack already connected `hit_group` on this victim?
+## Asked by the resolver before applying a contact.
+func has_connected(victim_id: int, hit_group: int) -> bool:
+	var groups: Array = _connected_groups.get(victim_id, [])
+	return groups.has(hit_group)
+
+
+## Record that the current attack connected `hit_group` on this victim.
+func mark_connected(victim_id: int, hit_group: int) -> void:
+	if not _connected_groups.has(victim_id):
+		_connected_groups[victim_id] = []
+	(_connected_groups[victim_id] as Array).append(hit_group)
 
 
 ## Record that the actor's own current attack connected. Called by the resolver

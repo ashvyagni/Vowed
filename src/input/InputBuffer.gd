@@ -108,6 +108,31 @@ func consume_any(actions: Array[CombatAction.Id], now: int,
 	return chosen
 
 
+## Which of `actions` was pressed most recently within the window, WITHOUT
+## consuming it. Returns the action, or -1.
+##
+## Exists so a caller can attempt an action and consume the press only if it
+## actually started. Consuming first and discarding on failure throws away a
+## press made during an attack's startup — which is exactly the moment buffering
+## is supposed to cover, and produces the "the game ate my input" complaint the
+## whole buffer exists to prevent.
+func peek_any(actions: Array[CombatAction.Id], now: int,
+		window: int = NATURAL_WINDOW) -> int:
+	var best_index: int = -1
+	var best_frame: int = -1
+	for i: int in CAPACITY:
+		if _consumed[i] != 0:
+			continue
+		if not _within(i, now, window):
+			continue
+		if not (_actions[i] as CombatAction.Id) in actions:
+			continue
+		if _frames[i] > best_frame:
+			best_frame = _frames[i]
+			best_index = i
+	return -1 if best_index < 0 else _actions[best_index]
+
+
 ## Is a press available, without consuming it? For AI prediction and for the
 ## debug overlay, which must not alter the state it displays.
 func peek(action: CombatAction.Id, now: int,

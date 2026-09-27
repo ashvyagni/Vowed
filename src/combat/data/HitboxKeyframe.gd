@@ -36,8 +36,16 @@ extends Resource
 ## experience as inconsistency.
 @export var shape: Shape3D
 
-## Offset from the actor's origin, in the actor's LOCAL space (+Z forward).
-## Local space so the same authored data works at any facing.
+## Offset from the actor's origin in AUTHORING space: +Z is FORWARD, +Y is up.
+##
+## Authoring space is deliberately NOT Godot's local space, where forward is -Z.
+## "0.72 metres in front" is what a designer means and what they should be able
+## to write; asking every author of every hitbox to remember a sign flip is a
+## defect generator, and the one time it is forgotten the hitbox silently sits
+## behind the character and the attack passes straight through the enemy.
+##
+## Never use this value directly for a transform — use `local_offset()`, which
+## performs the conversion in one place.
 @export var offset: Vector3 = Vector3(0.0, 1.0, 0.8)
 
 ## Per-volume damage multiplier against the attack's base damage. Lets one
@@ -52,6 +60,15 @@ extends Resource
 ## Overrides the attack's reaction for this volume only. Leave EMPTY to inherit.
 ## Used for attacks whose late frames launch while early frames merely stagger.
 @export var override_reaction: HitReaction
+
+
+## The offset in Godot's local space, ready for `translated_local()`.
+##
+## THE one place authoring space (+Z forward) becomes engine space (-Z forward).
+## Every consumer goes through here, so the convention cannot drift between the
+## resolver, the debug visualiser and any future consumer.
+func local_offset() -> Vector3:
+	return Vector3(offset.x, offset.y, -offset.z)
 
 
 ## Is this volume live on the given attack-relative frame?

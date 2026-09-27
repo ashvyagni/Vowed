@@ -173,8 +173,12 @@ func _consume_buffered_actions() -> void:
 			or combat.state == CombatState.Id.PARRYING:
 		combat.release_guard()
 
-	if buffer.consume(CombatAction.Id.DASH, now):
-		_try_dash()
+	# Peek-then-consume throughout: a press is only spent when the action
+	# actually starts. Consuming unconditionally would discard input made during
+	# an attack's startup or a dash cooldown — precisely the moments buffering
+	# exists to cover.
+	if buffer.peek(CombatAction.Id.DASH, now) and _try_dash():
+		buffer.consume(CombatAction.Id.DASH, now)
 
 	if buffer.consume(CombatAction.Id.JUMP, now):
 		_jump_buffer_frames_left = profile.jump_buffer_frames if profile != null else 6
@@ -183,11 +187,12 @@ func _consume_buffered_actions() -> void:
 
 	# Attacks last: everything above is either defensive or movement, and both
 	# should win a tie against committing to an attack.
-	var attack_action: int = buffer.consume_any(
+	var attack_action: int = buffer.peek_any(
 		[CombatAction.Id.PUNCH, CombatAction.Id.KICK,
 			CombatAction.Id.SOUL_TECHNIQUE], now)
 	if attack_action >= 0:
-		combat.try_action(attack_action as CombatAction.Id, _build_context())
+		if combat.try_action(attack_action as CombatAction.Id, _build_context()):
+			buffer.consume(attack_action as CombatAction.Id, now)
 
 
 func _build_context() -> ComboContext:
@@ -386,13 +391,14 @@ func _jump() -> void:
 	_jump_buffer_frames_left = 0
 
 
-func _try_dash() -> void:
+## Returns true if a dash actually began, so the caller knows whether to spend
+## the buffered press.
+func _try_dash() -> bool:
 	if _dash_cooldown_left > 0:
-		return
+		return false
 	if not is_on_floor():
 		if _air_dashes_left <= 0:
-			return
-		_air_dashes_left -= 1
+			return false
 
 	# Dash goes where the player is pointing; with no input it goes forward, so a
 	# neutral dash is still useful rather than doing nothing.
@@ -402,9 +408,15 @@ func _try_dash() -> void:
 	_dash_direction.y = 0.0
 	_dash_direction = _dash_direction.normalized()
 
-	if combat.try_action(CombatAction.Id.DASH, _build_context()):
-		_dash_cooldown_left = profile.dash_cooldown_frames
-		_last_dash_frame = CombatClock.frame
+	if not combat.try_action(CombatAction.Id.DASH, _build_context()):
+		return false
+
+	_dash_cooldown_left = profile.dash_cooldown_frames
+	_last_dash_frame = CombatClock.frame
+	if not is_on_floor():
+		# Only spend an air dash once the dash has actually committed.
+		_air_dashes_left -= 1
+	return true
 
 
 func _on_landed() -> void:

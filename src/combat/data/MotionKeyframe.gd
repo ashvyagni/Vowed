@@ -20,7 +20,11 @@ extends Resource
 ## Attack-relative frame on which this impulse applies (0-based).
 @export_range(0, 240, 1) var frame: int = 0
 
-## Velocity in the actor's LOCAL space: +Z forward, +Y up.
+## Velocity in AUTHORING space: +Z is FORWARD, +Y is up.
+##
+## As with `HitboxKeyframe.offset`, this is NOT Godot's local space (where
+## forward is -Z). `apply()` performs the conversion, so authored data reads the
+## way a designer thinks: a lunge is a positive Z number.
 @export var velocity: Vector3 = Vector3.ZERO
 
 @export var mode: CombatTypes.MotionMode = CombatTypes.MotionMode.SET
@@ -36,7 +40,11 @@ extends Resource
 ## Apply this keyframe to a velocity, given the actor's facing basis.
 ## Pure function of its inputs — no side effects — so it is directly unit-testable.
 func apply(current: Vector3, basis: Basis) -> Vector3:
-	var world_velocity: Vector3 = basis * velocity
+	# Authoring space (+Z forward) -> Godot local space (-Z forward) -> world.
+	# Converted here rather than at call sites, so the convention lives in one
+	# place and a caller cannot silently drive an attack backwards.
+	var world_velocity: Vector3 = basis * Vector3(
+		velocity.x, velocity.y, -velocity.z)
 	var result: Vector3 = current
 
 	match mode:

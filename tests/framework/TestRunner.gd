@@ -31,6 +31,7 @@ var _files_run: int = 0
 var _tests_run: int = 0
 var _tests_passed: int = 0
 var _tests_failed: int = 0
+var _file_errors: int = 0
 var _assertions: int = 0
 var _failure_report: PackedStringArray = []
 var _filter: String = ""
@@ -54,6 +55,17 @@ func _initialize() -> void:
 
 	for path: String in files:
 		_run_file(path)
+
+	# Reconcile: every discovered file must actually have run. This is a
+	# belt-and-braces check against the whole class of silent-skip failures,
+	# whatever their cause — a green run over fewer files than exist is worse
+	# than a red one, because it removes the safety net without removing the
+	# confidence.
+	if _files_run + _file_errors < files.size():
+		var unaccounted: int = files.size() - (_files_run + _file_errors)
+		_tests_failed += 1
+		_failure_report.append("%d discovered test file(s) neither ran nor "
+			% unaccounted + "reported an error — they were silently skipped")
 
 	var elapsed_ms: float = float(Time.get_ticks_usec() - start_usec) / 1000.0
 	_print_summary(elapsed_ms)
@@ -101,6 +113,17 @@ func _run_file(path: String) -> void:
 		return
 
 	var gd: GDScript = script as GDScript
+
+	# A script with a PARSE ERROR still loads as a GDScript, but calling new() on
+	# it raises an error that terminates this function without propagating — so
+	# the file would be skipped in silence and the run would still report ALL
+	# PASS. A test file that vanishes because it no longer compiles is exactly
+	# the file most likely to be protecting the code that just changed.
+	if not gd.can_instantiate():
+		_record_file_error(path, "failed to compile — see the parse errors "
+			+ "above. It was NOT run.")
+		return
+
 	var probe: Variant = gd.new()
 	if probe == null:
 		_record_file_error(path, "could not be instantiated")
@@ -185,6 +208,7 @@ func _run_one(path: String, instance: TestCase, method_name: String) -> void:
 
 func _record_file_error(path: String, reason: String) -> void:
 	_tests_failed += 1
+	_file_errors += 1
 	print("  \u001b[31mERROR\u001b[0m %s — %s" % [path, reason])
 	_failure_report.append("%s (%s)" % [path, reason])
 

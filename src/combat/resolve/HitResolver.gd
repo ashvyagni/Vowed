@@ -87,9 +87,11 @@ static func _query_hitbox(attacker: CombatComponent, attacker_node: Node3D,
 
 	var params := PhysicsShapeQueryParameters3D.new()
 	params.shape = box.shape
-	# The offset is authored in the actor's LOCAL space, so the same data works
-	# at any facing.
-	params.transform = attacker_node.global_transform.translated_local(box.offset)
+	# `local_offset()` converts authoring space (+Z forward) into Godot's local
+	# space (-Z forward). Using `box.offset` raw would place every hitbox BEHIND
+	# the attacker and every attack would pass through its target.
+	params.transform = attacker_node.global_transform.translated_local(
+		box.local_offset())
 	params.collision_mask = _opposing_hurtbox_mask(attacker_node)
 	params.collide_with_areas = true
 	params.collide_with_bodies = false
@@ -190,15 +192,25 @@ static func _apply(accepted: Array[Candidate]) -> Array[HitResult]:
 		var attacker_facing: Vector3 = \
 			-candidate.attacker_node.global_transform.basis.z
 
+		# One contact per hit group per victim per ATTACK. Checked on the
+		# attacker, whose current attack is the correct scope: a moving volume
+		# must connect once, while a later attack reusing the same group number
+		# must be free to connect again.
+		var victim_id: int = candidate.hurtbox.get_instance_id()
+		if candidate.attacker.has_connected(victim_id,
+				candidate.hitbox.hit_group):
+			continue
+
 		# The DEFENDER decides the outcome: it owns its guard, parry and
 		# invulnerability state. An attacker adjudicating its own hits could
 		# not be trusted to respect them.
 		var outcome: CombatTypes.ContactResult = candidate.victim.receive_hit(
-			candidate.attack, attacker_facing, candidate.hitbox.hit_group,
-			candidate.attacker_node.get_instance_id())
+			candidate.attack, attacker_facing)
 
 		if outcome == CombatTypes.ContactResult.MISS:
 			continue
+
+		candidate.attacker.mark_connected(victim_id, candidate.hitbox.hit_group)
 
 		if was_trade and outcome == CombatTypes.ContactResult.HIT:
 			outcome = CombatTypes.ContactResult.TRADED

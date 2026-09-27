@@ -5,5 +5,5 @@
 [resource]
 script = ExtResource("1_yjy5g")
 kind = 0
-pushback = 2.5
+pushback = 0.9
 camera_shake = 0.1

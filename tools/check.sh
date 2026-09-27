@@ -34,8 +34,17 @@ if echo "$boot_output" | grep -qE "SCRIPT ERROR|Parse Error"; then
     echo "FAIL — script errors during boot"; failed=1
 fi
 
-step "Test suite"
+step "Unit tests"
 godot --headless --path . -s tests/framework/TestRunner.gd || failed=1
+
+step "Integration — combat pipeline end to end"
+# The unit suite never touches the physics space, the hurtbox layers, the phase
+# ordering or the damage signal. This runs the real scenes in the real tree and
+# asserts a punch actually damages a dummy — the class of failure a green unit
+# suite structurally cannot see.
+godot --headless --path . res://tests/integration/CombatPipeline.tscn \
+    2>&1 | grep -vE "leaked|still in use|^   at: |Leaked instance|PagedAllocator"
+if [ "${PIPESTATUS[0]}" -ne 0 ]; then failed=1; fi
 
 step "Asset licence register"
 python3 tools/validate_assets.py || failed=1

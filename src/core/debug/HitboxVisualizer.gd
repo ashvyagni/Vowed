@@ -81,7 +81,7 @@ func _draw_hitboxes(actor: Actor) -> void:
 		var colour: Color = COLOUR_HITBOX_SPENT if combat.did_hit \
 			else COLOUR_HITBOX
 		_draw_shape(box.shape,
-			actor.global_transform.translated_local(box.offset), colour)
+			actor.global_transform.translated_local(box.local_offset()), colour)
 
 
 func _draw_hurtboxes(actor: Actor) -> void:

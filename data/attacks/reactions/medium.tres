@@ -5,4 +5,4 @@
 [resource]
 script = ExtResource("1_5lj6d")
 hitstun_frames = 18
-pushback = 3.5
+pushback = 1.8
