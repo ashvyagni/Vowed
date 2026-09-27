@@ -181,6 +181,18 @@ func _add_character(parent: Node, owner_node: Node, tint: Color) -> Node3D:
 	# is a readability failure, and players will blame the hit detection.
 	model.scale = Vector3.ONE * (1.72 / 1.83)
 
+	# THE MODEL FACES +Z; Godot's convention, and this project's, is -Z forward.
+	#
+	# Without this the actor travels the right way while its body faces the
+	# opposite way — a moonwalk. It made every control read as inverted (W
+	# appeared to go backwards, dash appeared to go backwards, the jump
+	# animation played forward while the character moved back) even though the
+	# movement vector, the facing yaw and the hitboxes were all provably
+	# correct. The bug was purely in the mesh's orientation, which is why it
+	# survived a unit suite that tested the maths and an integration suite that
+	# tested the hits.
+	model.rotation.y = PI
+
 	var tint_material := StandardMaterial3D.new()
 	tint_material.albedo_color = tint
 	tint_material.roughness = 0.72

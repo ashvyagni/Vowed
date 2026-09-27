@@ -17551,7 +17551,7 @@ height = 1.66
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_yh7mu"]
 
-[node name="TrainingDummy" type="CharacterBody3D" unique_id=1584346854 node_paths=PackedStringArray("combat", "intent_source")]
+[node name="TrainingDummy" type="CharacterBody3D" unique_id=562035192 node_paths=PackedStringArray("combat", "intent_source")]
 collision_layer = 8
 collision_mask = 7
 floor_snap_length = 0.35
@@ -17564,13 +17564,13 @@ profile = ExtResource("2_od1ir")
 combat = NodePath("Combat")
 intent_source = NodePath("Intent")
 
-[node name="Body" type="CollisionShape3D" parent="." unique_id=1981379991]
+[node name="Body" type="CollisionShape3D" parent="." unique_id=1305453993]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.86, 0)
 visible = false
 shape = SubResource("CapsuleShape3D_be34m")
 
 [node name="Model" type="Node3D" parent="." unique_id=893132303 instance=ExtResource("3_trbmm")]
-transform = Transform3D(0.9398907, 0, 0, 0, 0.9398907, 0, 0, 0, 0.9398907, 0, 0, 0)
+transform = Transform3D(-0.9398907, 0, -8.216785e-08, 0, 0.9398907, 0, 8.216785e-08, 0, -0.9398907, 0, 0, 0)
 
 [node name="Rig" type="Node3D" parent="Model" unique_id=1604192035]
 
@@ -17956,35 +17956,35 @@ skeleton = NodePath("..")
 [node name="AnimationPlayer" type="AnimationPlayer" parent="Model" unique_id=264024938]
 libraries/ = SubResource("AnimationLibrary_bfum6")
 
-[node name="Combat" type="Node" parent="." unique_id=701053694]
+[node name="Combat" type="Node" parent="." unique_id=909709606]
 script = ExtResource("4_cwkf4")
 library = ExtResource("5_wmxqe")
 graph = ExtResource("6_jj8lq")
 
-[node name="Intent" type="Node" parent="." unique_id=968875410]
+[node name="Intent" type="Node" parent="." unique_id=1305709249]
 script = ExtResource("7_np1cb")
 
-[node name="Animator" type="Node" parent="." unique_id=2044816347 node_paths=PackedStringArray("animation_player", "actor")]
+[node name="Animator" type="Node" parent="." unique_id=956122988 node_paths=PackedStringArray("animation_player", "actor")]
 script = ExtResource("8_h0o0f")
 animation_player = NodePath("../Model/AnimationPlayer")
 actor = NodePath("..")
 
-[node name="Hurtbox" type="Area3D" parent="." unique_id=2090662644 node_paths=PackedStringArray("combat")]
+[node name="Hurtbox" type="Area3D" parent="." unique_id=31902648 node_paths=PackedStringArray("combat")]
 collision_layer = 32
 collision_mask = 0
 script = ExtResource("9_j4soy")
 combat = NodePath("../Combat")
 
-[node name="Shape" type="CollisionShape3D" parent="Hurtbox" unique_id=2042708254]
+[node name="Shape" type="CollisionShape3D" parent="Hurtbox" unique_id=737101019]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.86, 0)
 visible = false
 shape = SubResource("CapsuleShape3D_rsb2h")
 
-[node name="CameraProxy" type="StaticBody3D" parent="." unique_id=1147786987]
+[node name="CameraProxy" type="StaticBody3D" parent="." unique_id=1592884416]
 collision_layer = 512
 collision_mask = 0
 
-[node name="Shape" type="CollisionShape3D" parent="CameraProxy" unique_id=1676285654]
+[node name="Shape" type="CollisionShape3D" parent="CameraProxy" unique_id=1727356208]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
 visible = false
 shape = SubResource("SphereShape3D_yh7mu")

@@ -93,23 +93,48 @@ func world_move_direction() -> Vector3:
 	if not _intent.has_move_input():
 		return Vector3.ZERO
 	if camera == null:
+		# No camera: treat input as already world-relative. Correct for tests
+		# and for AI, which has no camera at all.
 		return Vector3(_intent.move.x, 0.0, -_intent.move.y).normalized()
+	return camera_relative_direction(_intent.move,
+		camera.global_transform.basis)
 
-	var basis: Basis = camera.global_transform.basis
-	var forward: Vector3 = -basis.z
-	var right: Vector3 = basis.x
-	# Flatten: camera pitch must never affect ground movement speed or direction.
+
+## Resolve movement input against a camera orientation.
+##
+## PURE FUNCTION of (input, basis) — no node, no scene, no tree. That matters
+## for more than tidiness: a `Node3D` parented to a headless root reports an
+## identity `global_transform`, so any test that built a real camera to check
+## this would silently measure an unrotated one and pass no matter what the
+## code did. Taking the basis as an argument is what makes the contract
+## genuinely checkable.
+##
+## `move.x` is strafe (+ right), `move.y` is forward (+ away from the viewer).
+static func camera_relative_direction(move: Vector2,
+		camera_basis: Basis) -> Vector3:
+	# A camera looks down its own -Z; +X is the viewer's right.
+	var forward: Vector3 = -camera_basis.z
+	var right: Vector3 = camera_basis.x
+
+	# Flatten: camera pitch must never affect ground movement speed or
+	# direction, or looking down would slow the player and push them into the
+	# floor.
 	forward.y = 0.0
 	right.y = 0.0
+
 	if forward.length_squared() < 0.0001:
-		# Camera looking straight down or up — fall back to its roll axis so
-		# movement does not stall at extreme pitch.
-		forward = basis.y
+		# Looking straight up or down — the view direction has no horizontal
+		# component left, so fall back to the camera's up axis flattened, which
+		# still points the way the viewer is oriented.
+		forward = camera_basis.y
 		forward.y = 0.0
+		if forward.length_squared() < 0.0001:
+			return Vector3.ZERO
+
 	forward = forward.normalized()
 	right = right.normalized()
 
-	return (right * _intent.move.x + forward * _intent.move.y).normalized()
+	return (right * move.x + forward * move.y).normalized()
 
 
 ## Suspend input capture (menus, cutscenes, death). Pending presses are
