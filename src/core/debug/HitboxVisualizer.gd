@@ -35,11 +35,18 @@ func _ready() -> void:
 	# After the director's physics step, so what is drawn is what was resolved
 	# this frame rather than last frame's state.
 	process_priority = 1000
-	set_visible(false)
+	# Start hidden. Always go through set_enabled() so visibility and the flag
+	# cannot drift apart.
+	set_enabled(false)
 
 
 func set_enabled(value: bool) -> void:
 	_enabled = value
+	# Node visibility must track the enabled flag. This node is hidden on ready,
+	# and a hidden Node3D hides every child — so the pooled mesh instances were
+	# being positioned correctly and drawn into a hidden subtree. The result was
+	# a debug view that reported itself ON and rendered nothing.
+	visible = value
 	if not value:
 		_release_all()
 

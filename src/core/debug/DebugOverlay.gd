@@ -21,6 +21,15 @@ extends CanvasLayer
 ## registered actor is used.
 @export var subject: Actor
 
+## Draws the hitbox and hurtbox volumes. Found in the tree when not set.
+##
+## The overlay MUST drive this, because hitboxes have no node in the scene tree —
+## they are authored shapes queried during the combat tick — so there is nothing
+## for Godot's own collision debug to draw. An earlier version toggled
+## `CollisionShape3D.visible` instead, which does nothing at runtime: F2 reported
+## "hitbox shapes ON" and showed nothing at all.
+@export var hitbox_visualizer: HitboxVisualizer
+
 ## Performance budgets from docs/TECH_STACK.md §4. Exceeding one is highlighted,
 ## because a budget nobody is shown is a budget nobody keeps.
 const BUDGET_FRAME_MS: float = 16.6
@@ -98,9 +107,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		for child: Node in get_children():
 			(child as CanvasItem).visible = _visible_panels
 	elif event.is_action_pressed(&"debug_toggle_hitboxes"):
-		_show_shapes = not _show_shapes
-		_apply_shape_visibility()
-		_push_log("[b]hitbox shapes %s[/b]" % ("ON" if _show_shapes else "off"))
+		_toggle_shapes()
 	elif event.is_action_pressed(&"debug_frame_step"):
 		CombatClock.request_step()
 	elif event.is_action_pressed(&"debug_toggle_pause"):
@@ -117,19 +124,29 @@ func _unhandled_input(event: InputEvent) -> void:
 		_push_log("[b]arena reset[/b]")
 
 
-## Show or hide every collision shape in the scene. Godot's own
-## `debug_collisions_hint` cannot be toggled at runtime, so visibility is driven
-## directly.
-func _apply_shape_visibility() -> void:
-	var root: Node = get_tree().root
-	_walk_shapes(root)
+func _toggle_shapes() -> void:
+	if hitbox_visualizer == null:
+		hitbox_visualizer = _find_visualizer(get_tree().root)
+	if hitbox_visualizer == null:
+		# Say so rather than silently reporting success. A debug tool that lies
+		# about its own state is worse than one that is missing.
+		_push_log("[color=#ff4444]no HitboxVisualizer in the scene — "
+			+ "nothing to show[/color]")
+		return
+
+	hitbox_visualizer.toggle()
+	_show_shapes = hitbox_visualizer.is_enabled()
+	_push_log("[b]hitbox shapes %s[/b]" % ("ON" if _show_shapes else "off"))
 
 
-func _walk_shapes(node: Node) -> void:
+func _find_visualizer(node: Node) -> HitboxVisualizer:
+	if node is HitboxVisualizer:
+		return node as HitboxVisualizer
 	for child: Node in node.get_children():
-		if child is CollisionShape3D:
-			(child as CollisionShape3D).visible = _show_shapes
-		_walk_shapes(child)
+		var found: HitboxVisualizer = _find_visualizer(child)
+		if found != null:
+			return found
+	return null
 
 
 func _process(_delta: float) -> void:

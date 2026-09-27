@@ -316,16 +316,19 @@ func _write_lab() -> void:
 			intent.mode = placement["mode"]
 
 	# --- debug tooling ---
-	var overlay := DebugOverlay.new()
-	overlay.name = "DebugOverlay"
-	overlay.subject = player
-	root.add_child(overlay)
-	overlay.owner = root
-
+	# The visualiser is created FIRST so the overlay can hold a direct reference
+	# rather than relying on a tree search at keypress time.
 	var visualizer := HitboxVisualizer.new()
 	visualizer.name = "HitboxVisualizer"
 	root.add_child(visualizer)
 	visualizer.owner = root
+
+	var overlay := DebugOverlay.new()
+	overlay.name = "DebugOverlay"
+	overlay.subject = player
+	overlay.hitbox_visualizer = visualizer
+	root.add_child(overlay)
+	overlay.owner = root
 
 	_save_scene(root, LAB_PATH)
 

@@ -39,7 +39,7 @@ height = 1.66
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_2i4u1"]
 
-[node name="TrainingDummy" type="CharacterBody3D" unique_id=837806796 node_paths=PackedStringArray("combat", "intent_source")]
+[node name="TrainingDummy" type="CharacterBody3D" unique_id=730456951 node_paths=PackedStringArray("combat", "intent_source")]
 collision_layer = 8
 collision_mask = 7
 floor_snap_length = 0.35
@@ -52,50 +52,50 @@ profile = ExtResource("2_qbadd")
 combat = NodePath("Combat")
 intent_source = NodePath("Intent")
 
-[node name="Body" type="CollisionShape3D" parent="." unique_id=1403088852]
+[node name="Body" type="CollisionShape3D" parent="." unique_id=1946845270]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.86, 0)
 visible = false
 shape = SubResource("CapsuleShape3D_jj8lq")
 
-[node name="Graybox" type="MeshInstance3D" parent="." unique_id=1970313339]
+[node name="Graybox" type="MeshInstance3D" parent="." unique_id=2137644004]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.86, 0)
 material_override = SubResource("StandardMaterial3D_np1cb")
 mesh = SubResource("CapsuleMesh_h0o0f")
 
-[node name="FacingMarker" type="MeshInstance3D" parent="." unique_id=1440369757]
+[node name="FacingMarker" type="MeshInstance3D" parent="." unique_id=1861548943]
 transform = Transform3D(1, 0, 0, 0, -4.371139e-08, 1, 0, -1, -4.371139e-08, 0, 1.18, -0.52)
 material_override = SubResource("StandardMaterial3D_j4soy")
 mesh = SubResource("PrismMesh_be34m")
 
-[node name="FacingStripe" type="MeshInstance3D" parent="." unique_id=1756966533]
+[node name="FacingStripe" type="MeshInstance3D" parent="." unique_id=1595922692]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.52, -0.2)
 material_override = SubResource("StandardMaterial3D_huefu")
 mesh = SubResource("BoxMesh_rsb2h")
 
-[node name="Combat" type="Node" parent="." unique_id=1955223128]
+[node name="Combat" type="Node" parent="." unique_id=289856724]
 script = ExtResource("3_dchpj")
 library = ExtResource("4_od1ir")
 graph = ExtResource("5_trbmm")
 
-[node name="Intent" type="Node" parent="." unique_id=606788529]
+[node name="Intent" type="Node" parent="." unique_id=1393608290]
 script = ExtResource("6_cwkf4")
 
-[node name="Hurtbox" type="Area3D" parent="." unique_id=719255833 node_paths=PackedStringArray("combat")]
+[node name="Hurtbox" type="Area3D" parent="." unique_id=641409016 node_paths=PackedStringArray("combat")]
 collision_layer = 32
 collision_mask = 0
 script = ExtResource("7_wmxqe")
 combat = NodePath("../Combat")
 
-[node name="Shape" type="CollisionShape3D" parent="Hurtbox" unique_id=1575183053]
+[node name="Shape" type="CollisionShape3D" parent="Hurtbox" unique_id=1513857562]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.86, 0)
 visible = false
 shape = SubResource("CapsuleShape3D_yh7mu")
 
-[node name="CameraProxy" type="StaticBody3D" parent="." unique_id=622036898]
+[node name="CameraProxy" type="StaticBody3D" parent="." unique_id=445463988]
 collision_layer = 512
 collision_mask = 0
 
-[node name="Shape" type="CollisionShape3D" parent="CameraProxy" unique_id=1079760097]
+[node name="Shape" type="CollisionShape3D" parent="CameraProxy" unique_id=1900076859]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
 visible = false
 shape = SubResource("SphereShape3D_2i4u1")
