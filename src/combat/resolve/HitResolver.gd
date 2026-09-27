@@ -114,7 +114,11 @@ static func _query_hitbox(attacker: CombatComponent, attacker_node: Node3D,
 		candidate.hurtbox = hurtbox
 		candidate.hitbox = box
 		candidate.attack = attacker.attack
-		candidate.position = hurtbox.global_position
+		# The STRIKE point, not the victim's origin. A hurtbox Area3D sits at the
+		# actor's feet with its shape offset upward, so using its origin put
+		# every impact spark on the floor. The hitbox centre is where the fist
+		# actually is.
+		candidate.position = params.transform.origin
 		var offset: Vector3 = hurtbox.global_position - attacker_node.global_position
 		offset.y = 0.0
 		candidate.direction = offset.normalized() if offset.length_squared() > 0.001 \

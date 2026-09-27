@@ -136,11 +136,23 @@ func _reaction(id: StringName, kind: CombatTypes.ReactionKind, hitstun: int,
 # --- attacks ----------------------------------------------------------------
 
 func _build_attacks() -> void:
+	# HITSTOP VALUES
+	#
+	# Hitstop is the single strongest contributor to whether a hit reads as
+	# having landed, and it is FELT rather than seen. The first pass used 3-8
+	# frames, which is below the threshold where it registers at all — the fist
+	# appeared to pass through the target.
+	#
+	# Roughly doubled and scaled by weight. Safe to raise only because hitstop
+	# now freezes BOTH actors: freezing the attacker alone would subtract a
+	# frame of advantage for every frame of hitstop and silently break the
+	# combos that depend on it.
+
 	# === GROUND PUNCH STRING (K) ============================================
 	# The bread and butter: fast, safe, low reward. Where neutral play lives.
 
 	var jab_1 := _attack(&"jab_1", "Jab", CombatTypes.Category.PUNCH,
-		4, 2, 8, &"light", 6.0, 8.0, 3)
+		4, 2, 8, &"light", 6.0, 8.0, 6)
 	_hitbox(jab_1, 4, 5, 0.42, Vector3(0.18, 1.32, 0.72))
 	_cancel(jab_1, 6, 13, CombatTypes.CancelInto.ATTACK
 		| CombatTypes.CancelInto.DASH | CombatTypes.CancelInto.GUARD)
@@ -151,7 +163,7 @@ func _build_attacks() -> void:
 		+ "barely. Safe on block; the tool for contesting neutral."
 
 	var jab_2 := _attack(&"jab_2", "Cross", CombatTypes.Category.PUNCH,
-		5, 2, 10, &"light", 7.0, 9.0, 3)
+		5, 2, 10, &"light", 7.0, 9.0, 6)
 	_hitbox(jab_2, 5, 6, 0.44, Vector3(-0.18, 1.34, 0.80))
 	_cancel(jab_2, 7, 15, CombatTypes.CancelInto.ATTACK
 		| CombatTypes.CancelInto.DASH | CombatTypes.CancelInto.JUMP
@@ -160,7 +172,7 @@ func _build_attacks() -> void:
 
 	# The string's ender: stronger, but its recovery means committing to it.
 	var straight := _attack(&"straight", "Straight", CombatTypes.Category.PUNCH,
-		7, 3, 15, &"medium", 12.0, 16.0, 5)
+		7, 3, 15, &"medium", 12.0, 16.0, 9)
 	_hitbox(straight, 7, 9, 0.50, Vector3(0.0, 1.32, 0.92))
 	# ON_HIT only: a whiffed ender stays punishable, which is what stops the
 	# string being a free mash.
@@ -174,7 +186,7 @@ func _build_attacks() -> void:
 	# Slower, longer reach, more reward. The spacing tool.
 
 	var low_kick := _attack(&"low_kick", "Low Kick", CombatTypes.Category.KICK,
-		6, 3, 12, &"medium", 9.0, 12.0, 4)
+		6, 3, 12, &"medium", 9.0, 12.0, 7)
 	low_kick.height = CombatTypes.Height.LOW
 	_hitbox(low_kick, 6, 8, 0.46, Vector3(0.0, 0.42, 0.88))
 	_cancel(low_kick, 9, 16, CombatTypes.CancelInto.ATTACK
@@ -183,7 +195,7 @@ func _build_attacks() -> void:
 		+ "guard exists at M2."
 
 	var roundhouse := _attack(&"roundhouse", "Roundhouse",
-		CombatTypes.Category.KICK, 9, 3, 19, &"heavy", 16.0, 22.0, 6)
+		CombatTypes.Category.KICK, 9, 3, 19, &"heavy", 16.0, 22.0, 11)
 	# Two keyframes, SAME hit group: the volume follows the leg through the arc
 	# but still connects exactly once. Different groups here would be the classic
 	# "my attack does 900 damage" bug.
@@ -200,7 +212,7 @@ func _build_attacks() -> void:
 	# is what makes it COMMITTED rather than merely slow.
 
 	var uppercut := _attack(&"uppercut", "Rising Palm",
-		CombatTypes.Category.PUNCH, 12, 4, 22, &"launch", 14.0, 26.0, 8)
+		CombatTypes.Category.PUNCH, 12, 4, 22, &"launch", 14.0, 26.0, 12)
 	uppercut.priority = 3
 	uppercut.interrupt_armor = 1
 	_hitbox(uppercut, 12, 15, 0.56, Vector3(0.0, 1.55, 0.62))
@@ -215,7 +227,7 @@ func _build_attacks() -> void:
 	# === OVERHEAD / KNOCKDOWN ==============================================
 
 	var axe_kick := _attack(&"axe_kick", "Axe Kick", CombatTypes.Category.KICK,
-		14, 3, 24, &"knockdown", 18.0, 30.0, 7)
+		14, 3, 24, &"knockdown", 18.0, 30.0, 12)
 	axe_kick.height = CombatTypes.Height.OVERHEAD
 	axe_kick.interrupt_armor = 1
 	_hitbox(axe_kick, 14, 16, 0.50, Vector3(0.0, 0.95, 0.78))
@@ -228,7 +240,7 @@ func _build_attacks() -> void:
 	# move set comes out of a 7-key input language instead of an ability bar.
 
 	var lunge_punch := _attack(&"lunge_punch", "Lunging Palm",
-		CombatTypes.Category.SPECIAL, 10, 3, 18, &"medium", 13.0, 18.0, 5)
+		CombatTypes.Category.SPECIAL, 10, 3, 18, &"medium", 13.0, 18.0, 9)
 	_hitbox(lunge_punch, 10, 12, 0.48, Vector3(0.0, 1.28, 1.05))
 	_motion(lunge_punch, 8, Vector3(0.0, 0.0, 9.5))
 	_motion(lunge_punch, 13, Vector3(0.0, 0.0, 0.0), CombatTypes.MotionMode.DAMPEN)
@@ -238,14 +250,14 @@ func _build_attacks() -> void:
 		+ "so its reach is a tunable number rather than an animation artifact."
 
 	var sweep := _attack(&"sweep", "Sweep", CombatTypes.Category.SPECIAL,
-		11, 3, 22, &"knockdown", 11.0, 20.0, 6)
+		11, 3, 22, &"knockdown", 11.0, 20.0, 10)
 	sweep.height = CombatTypes.Height.LOW
 	_hitbox(sweep, 11, 13, 0.54, Vector3(0.0, 0.28, 0.85))
 	sweep.designer_notes = "Back+J. Low knockdown with long recovery: a " \
 		+ "read, not a poke."
 
 	var spin_kick := _attack(&"spin_kick", "Spinning Heel",
-		CombatTypes.Category.SPECIAL, 10, 4, 18, &"spin", 13.0, 20.0, 5)
+		CombatTypes.Category.SPECIAL, 10, 4, 18, &"spin", 13.0, 20.0, 9)
 	_hitbox(spin_kick, 10, 13, 0.58, Vector3(0.0, 1.10, 0.75), 0)
 	_cancel(spin_kick, 14, 20, CombatTypes.CancelInto.ATTACK
 		| CombatTypes.CancelInto.DASH, CombatTypes.ContactRequirement.ON_CONTACT)
@@ -257,14 +269,14 @@ func _build_attacks() -> void:
 	# playing out awkwardly through the landing.
 
 	var air_punch := _attack(&"air_punch", "Air Palm",
-		CombatTypes.Category.PUNCH, 5, 3, 12, &"light", 8.0, 10.0, 4)
+		CombatTypes.Category.PUNCH, 5, 3, 12, &"light", 8.0, 10.0, 7)
 	air_punch.stance = CombatTypes.Stance.AIRBORNE
 	_hitbox(air_punch, 5, 7, 0.46, Vector3(0.0, 1.10, 0.72))
 	_cancel(air_punch, 7, 14, CombatTypes.CancelInto.ATTACK
 		| CombatTypes.CancelInto.DASH)
 
 	var air_kick := _attack(&"air_kick", "Air Kick", CombatTypes.Category.KICK,
-		7, 3, 14, &"medium", 11.0, 14.0, 5)
+		7, 3, 14, &"medium", 11.0, 14.0, 9)
 	air_kick.stance = CombatTypes.Stance.AIRBORNE
 	_hitbox(air_kick, 7, 9, 0.50, Vector3(0.0, 0.85, 0.80))
 	_cancel(air_kick, 10, 16, CombatTypes.CancelInto.ATTACK,
@@ -272,7 +284,7 @@ func _build_attacks() -> void:
 
 	# The air-to-ground finisher: ends the aerial route decisively.
 	var dive_kick := _attack(&"dive_kick", "Diving Heel",
-		CombatTypes.Category.SPECIAL, 8, 6, 20, &"knockdown", 17.0, 26.0, 7)
+		CombatTypes.Category.SPECIAL, 8, 6, 20, &"knockdown", 17.0, 26.0, 12)
 	dive_kick.stance = CombatTypes.Stance.AIRBORNE
 	_hitbox(dive_kick, 8, 13, 0.52, Vector3(0.0, 0.60, 0.68))
 	_motion(dive_kick, 8, Vector3(0.0, -13.0, 6.0), CombatTypes.MotionMode.SET, true)
@@ -282,14 +294,14 @@ func _build_attacks() -> void:
 	# === DASH ATTACKS ======================================================
 
 	var dash_punch := _attack(&"dash_punch", "Dash Palm",
-		CombatTypes.Category.SPECIAL, 6, 3, 16, &"medium", 12.0, 17.0, 5)
+		CombatTypes.Category.SPECIAL, 6, 3, 16, &"medium", 12.0, 17.0, 9)
 	_hitbox(dash_punch, 6, 8, 0.48, Vector3(0.0, 1.26, 0.95))
 	_motion(dash_punch, 4, Vector3(0.0, 0.0, 7.5))
 	_cancel(dash_punch, 9, 18, CombatTypes.CancelInto.ATTACK,
 		CombatTypes.ContactRequirement.ON_HIT)
 
 	var dash_kick := _attack(&"dash_kick", "Dash Heel",
-		CombatTypes.Category.SPECIAL, 8, 3, 20, &"heavy", 15.0, 21.0, 6)
+		CombatTypes.Category.SPECIAL, 8, 3, 20, &"heavy", 15.0, 21.0, 10)
 	_hitbox(dash_kick, 8, 10, 0.52, Vector3(0.0, 1.00, 0.98))
 	_motion(dash_kick, 6, Vector3(0.0, 0.0, 8.5))
 
@@ -298,7 +310,7 @@ func _build_attacks() -> void:
 	# for holding a block correctly rather than a universal reversal.
 
 	var counter_palm := _attack(&"counter_palm", "Counter Palm",
-		CombatTypes.Category.SPECIAL, 5, 3, 16, &"crumple", 14.0, 24.0, 8)
+		CombatTypes.Category.SPECIAL, 5, 3, 16, &"crumple", 14.0, 24.0, 14)
 	counter_palm.priority = 5
 	counter_palm.invulnerable_frames = Vector2i(0, 4)
 	_hitbox(counter_palm, 5, 7, 0.50, Vector3(0.0, 1.30, 0.80))

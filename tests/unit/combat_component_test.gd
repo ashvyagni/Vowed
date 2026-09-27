@@ -764,3 +764,51 @@ func test_a_dead_actor_cannot_act_or_be_hit() -> void:
 	var incoming: AttackData = _attack(&"enemy_jab")
 	assert_eq(component.receive_hit(incoming, Vector3.FORWARD),
 		CombatTypes.ContactResult.MISS)
+
+
+# --- hitstop symmetry -------------------------------------------------------
+
+func test_hitstop_freezes_the_victim_as_well_as_the_attacker() -> void:
+	# If only the attacker froze, the victim's hitstun would keep draining
+	# during the freeze and every frame of hitstop would silently cost the
+	# attacker a frame of advantage — so making hits feel weightier would break
+	# the combos that depend on that advantage.
+	var incoming: AttackData = _attack(&"enemy_jab", 5, 3, 10, 8)
+	incoming.on_hit = _reaction(20)
+
+	component.receive_hit(incoming, Vector3.FORWARD)
+	assert_true(component.is_in_hitstop(),
+		"the victim must freeze on contact")
+	assert_eq(component.hitstop_remaining, 8,
+		"the victim's freeze must match the attack's hitstop")
+
+
+func test_victim_hitstun_does_not_drain_during_hitstop() -> void:
+	var incoming: AttackData = _attack(&"enemy_jab", 5, 3, 10, 6)
+	incoming.on_hit = _reaction(20)
+	component.receive_hit(incoming, Vector3.FORWARD)
+
+	# Burn exactly the hitstop frames.
+	_tick(6)
+	assert_eq(component.state, CombatState.Id.HITSTUN,
+		"still in hitstun once the freeze ends")
+
+	# Then the full authored hitstun must still be served.
+	_tick(19)
+	assert_eq(component.state, CombatState.Id.HITSTUN,
+		"hitstun must not have been eaten by the freeze")
+	_tick()
+	assert_eq(component.state, CombatState.Id.NEUTRAL)
+
+
+func test_a_guarded_hit_also_freezes_the_defender() -> void:
+	component.try_action(CombatAction.Id.GUARD, context)
+	_tick(CombatComponent.PARRY_WINDOW_FRAMES + 1)
+
+	var incoming: AttackData = _attack(&"enemy_jab", 5, 3, 10, 9)
+	incoming.guard_hitstop = 4
+	component.receive_hit(incoming, Vector3.FORWARD)
+
+	assert_eq(component.hitstop_remaining, 4,
+		"a blocked hit freezes on guard_hitstop, which is shorter than a clean "
+			+ "hit so the difference is legible through feel alone")

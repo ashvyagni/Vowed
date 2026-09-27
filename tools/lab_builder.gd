@@ -184,6 +184,11 @@ func _add_character(parent: Node, owner_node: Node, tint: Color) -> Node3D:
 	var tint_material := StandardMaterial3D.new()
 	tint_material.albedo_color = tint
 	tint_material.roughness = 0.72
+	# Every instance of this scene needs its OWN material. Without this the
+	# material resource is shared across all three dummies, so flashing the one
+	# that was hit lights up all of them — feedback pointing at the wrong actor
+	# is worse than no feedback, because it actively misleads.
+	tint_material.resource_local_to_scene = true
 	for mesh: MeshInstance3D in _find_meshes(model):
 		mesh.material_override = tint_material
 

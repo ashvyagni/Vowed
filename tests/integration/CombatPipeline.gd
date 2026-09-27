@@ -174,7 +174,15 @@ func _test_launcher_launches() -> void:
 			% CombatState.name_of(_dummy.combat.state)
 			+ "the gateway every aerial route depends on")
 	_check.assert_gt(_dummy.velocity.y, 0.0,
-		"a launched actor must actually be moving upward")
+		"a launched actor must actually be moving upward — hitstop must FREEZE "
+			+ "the launch impulse, not erase it")
+
+	# And it must still be rising once the freeze ends, not merely at the
+	# instant of contact.
+	await _frames(10)
+	_check.assert_gt(_dummy.global_position.y, 0.25,
+		"the dummy should have gained height after the freeze released; "
+			+ "got y=%.2f" % _dummy.global_position.y)
 
 
 func _test_hitstop() -> void:

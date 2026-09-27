@@ -127,7 +127,11 @@ func phase_intent() -> void:
 	if intent_source == null or combat == null:
 		return
 
-	_intent = intent_source.poll(CombatClock.frame)
+	# Advance the actionable clock first: buffered presses must not age during
+	# hitstop, or a punchier hit would eat the follow-up the player queued.
+	intent_source.advance(combat == null or not combat.is_in_hitstop())
+
+	_intent = intent_source.poll(intent_source.frame_now)
 	move_direction = _resolve_move_direction()
 
 	_tick_movement_timers()
@@ -165,7 +169,7 @@ func _tick_movement_timers() -> void:
 ## ignores self-preservation.
 func _consume_buffered_actions() -> void:
 	var buffer: InputBuffer = intent_source.buffer
-	var now: int = CombatClock.frame
+	var now: int = intent_source.frame_now
 
 	# Guard is a HELD state, not a buffered press, so it is read continuously.
 	if _intent.is_held(CombatAction.Id.GUARD):
@@ -268,10 +272,16 @@ func phase_motion() -> void:
 		move_and_slide()
 		return
 
-	# Hitstop freezes the actor completely. Movement continuing through hitstop
-	# is one of the clearest ways to make a hit feel like it did not land.
+	# Hitstop freezes the actor completely: no movement is applied this frame.
+	# Movement continuing through hitstop is one of the clearest ways to make a
+	# hit feel like it did not land.
+	#
+	# Velocity is PRESERVED rather than zeroed. Zeroing it destroyed the launch
+	# impulse a launcher had just imparted — the victim entered LAUNCHED state
+	# and then stood still, because the freeze wiped the velocity before it was
+	# ever applied. Skipping move_and_slide freezes the actor just as
+	# effectively while leaving the impulse intact for when time resumes.
 	if combat != null and combat.is_in_hitstop():
-		velocity = Vector3.ZERO
 		return
 
 	_apply_horizontal()

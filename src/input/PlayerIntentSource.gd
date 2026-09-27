@@ -51,8 +51,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		if name == &"":
 			continue
 		if event.is_action_pressed(name, false, true):
-			buffer.push(id, CombatClock.frame)
-			action_pressed.emit(id, CombatClock.frame)
+			# Stamped with the ACTIONABLE clock, not the wall clock, so the
+			# press does not age while the actor is frozen in hitstop.
+			buffer.push(id, frame_now)
+			action_pressed.emit(id, frame_now)
 
 
 func poll(_frame: int) -> ActorIntent:

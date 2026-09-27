@@ -125,6 +125,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			% ("ON" if CombatClock.slow_motion else "off"))
 	elif event.is_action_pressed(&"debug_reset_lab"):
 		CombatDirector.reset_all()
+		HitEffects.clear_all()
 		_log.clear()
 		_push_log("[b]arena reset[/b]")
 

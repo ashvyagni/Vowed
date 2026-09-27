@@ -393,7 +393,18 @@ func receive_hit(incoming: AttackData,
 		return CombatTypes.ContactResult.PARRIED
 
 	if state == CombatState.Id.GUARDING and _guard_covers(incoming):
+		apply_hitstop(incoming.guard_hitstop)
 		return CombatTypes.ContactResult.GUARDED
+
+	# HITSTOP APPLIES TO BOTH ACTORS, and this is not cosmetic.
+	#
+	# The attacker freezes in `register_own_contact()`. If the victim did NOT
+	# also freeze, its hitstun would keep counting down during the freeze — so
+	# every frame of hitstop would silently subtract a frame of the attacker's
+	# advantage, and raising hitstop to make hits feel weightier would quietly
+	# break the combos that depend on that advantage. Freezing both preserves
+	# frame advantage exactly while the hit is punctuated.
+	apply_hitstop(incoming.hitstop)
 
 	# Armour absorbs the reaction but not the damage, which is what lets a heavy
 	# attack be committed rather than merely slow.

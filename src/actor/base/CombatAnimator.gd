@@ -69,6 +69,14 @@ func _ready() -> void:
 			"no AnimationPlayer found for '%s'; it will not animate"
 				% (actor.name if actor != null else name))
 
+	# Every connecting hit must RESTART the flinch, not merely request the clip
+	# that is already playing. Without this the second and later hits of a combo
+	# produce no visible reaction at all — the target silently absorbs them and
+	# a four-hit string reads as a single hit. State changes alone cannot express
+	# this, because the victim never leaves HITSTUN between the hits.
+	if actor != null and actor.combat != null:
+		actor.combat.damage_received.connect(_on_damage_received)
+
 
 func _find_player(node: Node) -> AnimationPlayer:
 	for child: Node in node.get_children():
@@ -159,6 +167,31 @@ func _locomotion_clip() -> StringName:
 	if speed < idle_threshold:
 		return idle_anim
 	return run_anim if speed >= run_threshold else walk_anim
+
+
+## Restart the reaction clip on every connecting hit.
+##
+## Deliberately picks a heavier clip for a heavier reaction, so the player can
+## read HOW hard they hit from the target's body rather than from a number.
+func _on_damage_received(result: HitResult) -> void:
+	if animation_player == null or actor == null or actor.combat == null:
+		return
+	# A guarded hit has no reaction to play; guard already has its own pose.
+	if result.reaction == null:
+		return
+
+	var clip: StringName = hit_anim
+	if CombatTypes.reaction_is_airborne(result.reaction.kind) \
+			or result.reaction.kind == CombatTypes.ReactionKind.HEAVY:
+		clip = hit_head_anim
+	if not _has(clip):
+		return
+
+	animation_player.play(String(clip))
+	# From zero, explicitly. `play()` on the clip already playing would resume
+	# it mid-flinch, which is exactly the case this exists to fix.
+	animation_player.seek(0.0, true)
+	_current_non_combat = clip
 
 
 # --- helpers ----------------------------------------------------------------

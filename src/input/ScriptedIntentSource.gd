@@ -36,7 +36,7 @@ func poll(_frame: int) -> ActorIntent:
 
 
 func press(action: CombatAction.Id) -> void:
-	buffer.push(action, CombatClock.frame)
+	buffer.push(action, frame_now)
 
 
 func hold(action: CombatAction.Id) -> void:

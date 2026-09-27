@@ -43,7 +43,7 @@ func _handle_lock_on() -> void:
 	if intent_source == null:
 		return
 	if not intent_source.buffer.consume(CombatAction.Id.LOCK_ON,
-			CombatClock.frame):
+			intent_source.frame_now):
 		return
 
 	if target != null:
