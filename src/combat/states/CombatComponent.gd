@@ -81,6 +81,21 @@ var did_guard: bool = false
 ## Armour hits remaining on the current attack.
 var armor_remaining: int = 0
 
+## Frames of reduced gravity left on a launched actor, and the multiplier to
+## apply during them. Both come straight from the `HitReaction` that launched
+## them.
+##
+## THESE FIELDS WERE DEAD DATA. `HitReaction.float_frames` and
+## `float_gravity_scale` have been authored, validated and saved to `.tres`
+## since the reactions were written — and NOTHING read either of them. The
+## actor's gravity used a hardcoded 0.45 for the whole LAUNCHED state instead,
+## so a designer retuning launch float in the data changed nothing at all, with
+## no error to say so. That is precisely the `src/` ⟂ `data/` failure the
+## architecture rules exist to prevent (docs/ARCHITECTURE.md): content that
+## looks authorable but is really hardcoded somewhere else.
+var float_frames_left: int = 0
+var float_gravity_scale: float = 1.0
+
 ## Frames of hitstun/stagger/launch left to serve.
 var stun_remaining: int = 0
 
@@ -115,6 +130,8 @@ func tick() -> void:
 		return
 
 	state_frame += 1
+	if float_frames_left > 0:
+		float_frames_left -= 1
 
 	match state:
 		CombatState.Id.ATTACKING:
@@ -323,6 +340,30 @@ func _start_dodge() -> bool:
 	return true
 
 
+## Leave the current attack because the actor jumped out of it.
+##
+## Jump is the one action that moves the body WITHOUT going through
+## `try_action`, because jumping is locomotion the actor owns rather than a
+## combat action this component routes. That asymmetry hid a real bug: an
+## attack's JUMP cancel window granted permission, the body left the ground —
+## and the attack kept right on executing. The player was airborne and still
+## eleven frames deep in `uppercut`.
+##
+## That made the ENTIRE aerial game unreachable, silently. Every aerial route is
+## authored from no predecessor (`"" -> air_punch`), so with a stale ground
+## attack still current there was no edge to take: the follow-up press resolved
+## to nothing, and the launcher — whose only purpose is to open the air route —
+## did nothing but damage. Caught by the aerial-chain integration case, which
+## reported a 2-hit combo where the middle hit had simply never happened.
+##
+## Combo survival is deliberately left to `_finish_attack`: cancelling a
+## connected attack keeps the combo, cancelling a whiff drops it. A jump is not
+## a way to launder a missed launcher.
+func cancel_for_jump() -> void:
+	if state == CombatState.Id.ATTACKING and attack != null:
+		_finish_attack(true)
+
+
 func release_guard() -> void:
 	if state == CombatState.Id.GUARDING or state == CombatState.Id.PARRYING:
 		_transition(CombatState.Id.NEUTRAL)
@@ -433,7 +474,33 @@ func _enter_hitstun(incoming: AttackData, attacker_facing: Vector3) -> void:
 
 	stun_remaining = reaction.hitstun_frames
 
-	if reaction.causes_knockdown:
+	# Arm the authored float. Refreshed by every hit of a juggle, which is what
+	# lets a longer string hold a target up longer — and is bounded by the combo
+	# graph's `max_combo_length`, not by gravity.
+	if reaction.float_frames > 0:
+		float_frames_left = maxi(float_frames_left, reaction.float_frames)
+		float_gravity_scale = reaction.float_gravity_scale
+
+	# JUGGLE: a victim struck while AIRBORNE stays airborne.
+	#
+	# You cannot ground-hitstun someone in midair. Most reactions are authored
+	# for a standing target, so applying one verbatim to an airborne victim
+	# drops them into HITSTUN — a grounded state — while their body is still in
+	# the air. Stance is then wrong for everything downstream: the victim reads
+	# as grounded, routes gated on a LAUNCHED target (the air-to-ground
+	# finisher) stop being legal, and `_apply_gravity`'s launch float stops
+	# applying, so they fall out from under the rest of the string.
+	#
+	# MEASURED, not assumed: with this branch disabled the four-hit aerial
+	# string in the integration probe drops from a 4-hit, 37.0-damage combo to
+	# 28.3 damage and a combo counter of ZERO — the hits land as disconnected
+	# pokes rather than a combo. This is the load-bearing half of the juggle.
+	# A separate per-reaction `juggle_lift` impulse was tried alongside it and
+	# removed: ablation showed it changed nothing, because the launch float
+	# already holds the victim up for the whole string.
+	if not grounded and not reaction.causes_knockdown:
+		_transition(CombatState.Id.LAUNCHED)
+	elif reaction.causes_knockdown:
 		_transition(CombatState.Id.KNOCKDOWN)
 	elif reaction.is_airborne_reaction():
 		_transition(CombatState.Id.LAUNCHED)
@@ -598,6 +665,8 @@ func reset() -> void:
 	combo_length = 0
 	hitstop_remaining = 0
 	stun_remaining = 0
+	float_frames_left = 0
+	float_gravity_scale = 1.0
 	did_hit = false
 	did_guard = false
 	armor_remaining = 0

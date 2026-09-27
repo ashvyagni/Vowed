@@ -96,9 +96,33 @@ func _build_reactions() -> void:
 	# only a pixel-perfect input could follow up.
 	var launch: HitReaction = _reaction(&"launch",
 		CombatTypes.ReactionKind.LAUNCH, 34, 1.0, 0.25)
-	launch.launch_velocity = Vector3(0.0, 9.0, 1.5)
-	launch.float_frames = 26
-	launch.float_gravity_scale = 0.32
+	# LAUNCH HEIGHT IS BOUNDED BY THE PLAYER'S JUMP, not chosen for spectacle.
+	#
+	# MEASURED, both values, with the aerial probe: at 9.0 m/s the victim climbs
+	# to roughly 3.9 m and is still RISING a second later, while the player's
+	# jump apex is about 2.1 m. The follow-ups still connected — a 1.5 m sword
+	# of vertical error is inside a humanoid hurtbox capsule — so no test ever
+	# objected. It simply looked absurd: the target sails a metre over the
+	# player's head while the player swings at their feet, and the target keeps
+	# going up after the combo ends.
+	#
+	# 5.8 m/s brings the apex to about 2.1 m — just under the player's own, so
+	# the player hangs slightly ABOVE the victim and strikes downward into them,
+	# which is the read every juggle in the genre uses. It makes a launcher an
+	# INVITATION to follow rather than a way to remove the opponent from the
+	# fight. The horizontal component drops from 1.5 to nearly zero for the same
+	# reason: pushing the target away costs the attacker the reach they just
+	# earned.
+	#
+	# What this tuning is NOT: a fix for the aerial game being unreachable. That
+	# was a real defect, but it lived in `Actor._jump`, which cancelled an
+	# attack's body without cancelling the attack — see
+	# `CombatComponent.cancel_for_jump`. Both launch values clear the
+	# integration case now that the actual bug is gone. This is a feel choice,
+	# and it is recorded as one.
+	launch.launch_velocity = Vector3(0.0, 5.8, 0.25)
+	launch.float_frames = 30
+	launch.float_gravity_scale = 0.30
 	_save(launch, REACTION_DIR + "launch.tres")
 
 	var crumple: HitReaction = _reaction(&"crumple",
@@ -570,6 +594,21 @@ func _build_motion_profile() -> void:
 	p.jump_height = 2.0
 	p.rise_gravity_scale = 0.82
 	p.fall_gravity_scale = 1.42
+	# Descent only, while performing an air attack: the attacker's half of a
+	# juggle's shared fall (see `Actor._apply_gravity`).
+	#
+	# Swept with the aerial probe against the full four-hit route. The result was
+	# binary rather than a curve: every value from 0.15 to 0.55 produced the same
+	# 5-hit, 49.2-damage combo, and 1.0 — no hang — produced 37.0 damage and a
+	# combo counter of ZERO. So the test cannot choose this number, and it is
+	# chosen on principle instead: 0.30 is exactly the launch reaction's
+	# `float_gravity_scale`, so attacker and victim descend at the SAME rate and
+	# hold their relative positions for the length of the string. That is what
+	# "a juggle is a shared fall" means literally rather than approximately.
+	#
+	# The player's jump apex measured 2.07 m at every value including 1.0, which
+	# is the check that this buys hang time and not height.
+	p.air_attack_fall_scale = 0.30
 	p.air_control = 0.74
 	p.max_fall_speed = 34.0
 	p.coyote_frames = 5

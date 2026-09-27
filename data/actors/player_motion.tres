@@ -16,5 +16,6 @@ jump_height = 2.0
 rise_gravity_scale = 0.82
 fall_gravity_scale = 1.42
 air_control = 0.74
+air_attack_fall_scale = 0.3
 max_fall_speed = 34.0
 dash_speed = 13.5

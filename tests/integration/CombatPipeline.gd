@@ -53,6 +53,12 @@ func _ready() -> void:
 		_test_guard_reduces_damage)
 	await _case("a launcher puts the dummy airborne", _test_launcher_launches)
 	await _case("hitstop freezes the attacker on contact", _test_hitstop)
+	await _case("the full aerial chain executes end to end",
+		_test_aerial_chain)
+	await _case("a launched actor floats at the rate its reaction authored",
+		_test_launch_float_is_data_driven)
+	await _case("the model faces the actor's forward direction",
+		_test_model_faces_forward)
 	await _case("every referenced animation clip exists",
 		_test_animation_clips_exist)
 	await _case("combat produces audio feedback", _test_audio_feedback)
@@ -199,6 +205,264 @@ func _test_hitstop() -> void:
 	_check.assert_true(_player.combat.is_in_hitstop(),
 		"the attacker must be in hitstop right after connecting — without it, "
 			+ "hits have no weight")
+
+
+## The game's most complex routing path, end to end.
+##
+##   uppercut (launcher) -> JUMP-cancel on hit -> air_punch -> air_kick
+##
+## Every mechanism that makes air combat a SYSTEM rather than a trick has to
+## work simultaneously for this to pass: the launcher's LAUNCH reaction and its
+## float frames, a jump cancel gated ON_HIT, stance gating that makes the aerial
+## routes legal only while airborne, and the graph resolving a different string
+## in the air than on the ground.
+##
+## Each of those is unit-tested in isolation and all of them pass. This is the
+## only check that they compose — and composition is where the launcher is
+## usually found to put the target somewhere the follow-up cannot reach.
+func _test_aerial_chain() -> void:
+	_reset()
+	await _frames(6)
+
+	var start_health: float = _dummy.health
+
+	# 1. Launcher: BACK + PUNCH from neutral.
+	_press_with_direction(CombatAction.Id.PUNCH, Vector2(0.0, -1.0))
+	await _frames(14)
+
+	_check.assert_eq(_dummy.combat.state, CombatState.Id.LAUNCHED,
+		"the launcher must connect for the rest of the chain to be reachable "
+			+ "(got %s)" % CombatState.name_of(_dummy.combat.state))
+
+	# 2. Jump-cancel out of the launcher. Legal only because it connected.
+	#
+	# The wait has to clear the launcher's 12 frames of HITSTOP before the
+	# jump-cancel window (frames 14-24) is even reachable. The press itself is
+	# made immediately and survives the freeze, because buffered input ages on
+	# the actionable clock rather than the wall clock — which is exactly the
+	# behaviour a player relies on here.
+	_scripted.move = Vector2.ZERO
+	_press(CombatAction.Id.JUMP)
+	await _frames(22)
+
+	_check.assert_false(_player.is_on_floor(),
+		"the jump cancel must actually get the player airborne, or no aerial "
+			+ "route can ever be reached")
+
+	# 3. Aerial string. Routed differently from the ground string purely by
+	#    stance.
+	# air_punch is 5/3/12 with a 7-frame hitstop, and its cancel window opens on
+	# frame 7 — so the follow-up needs room for the freeze to release before the
+	# window is reachable.
+	_press(CombatAction.Id.PUNCH)
+	await _frames(16)
+
+	# The press above is the one that used to do NOTHING. `_jump` moved the body
+	# out of the launcher without ending the attack, so the player was airborne
+	# with `uppercut` still executing — and every aerial route is authored from
+	# no predecessor, leaving no edge to take. Asserting the aerial attack is
+	# actually RUNNING, rather than only checking the combo total at the end,
+	# is what turns that from a mystery into a named failure: the old symptom
+	# was "combo 2 instead of 3", which says nothing about which hit was lost.
+	_check.assert_eq(_player.combat.attack.id if _player.combat.attack != null
+		else &"", &"air_punch",
+		"the first aerial press must actually start air_punch; the player was "
+			+ "airborne but still running %s" % (_player.combat.attack.id
+				if _player.combat.attack != null else &"nothing"))
+
+	_press(CombatAction.Id.PUNCH)
+	await _frames(16)
+	_press(CombatAction.Id.KICK)
+	await _frames(20)
+
+	# 4. The finisher, which is the assertion that actually guards the juggle.
+	#
+	# `dive_kick` carries `require_target_state = LAUNCHED`, so it is legal ONLY
+	# while the victim is still genuinely airborne. Everything before it lands
+	# whether or not the juggle works — a humanoid hurtbox capsule is about a
+	# metre tall, so a target sagging out of the air is still inside the next
+	# hitbox for a hit or two, which is exactly why the earlier presses cannot
+	# detect the failure. Measured: with the airborne-victim branch in
+	# `_enter_hitstun` disabled, all four hits above still connect for the same
+	# 37.0 damage, while the victim visibly falls from 1.47 m to 0.55 m in
+	# ordinary GROUND hitstun. The finisher is the first thing that notices.
+	_check.assert_eq(_dummy.combat.state, CombatState.Id.LAUNCHED,
+		"the victim must still be LAUNCHED after three aerial hits, or the "
+			+ "juggle is not holding them up (got %s)"
+			% CombatState.name_of(_dummy.combat.state))
+
+	_press(CombatAction.Id.KICK)
+	await _frames(14)
+
+	_check.assert_eq(_player.combat.attack.id if _player.combat.attack != null
+		else &"", &"dive_kick",
+		"the finisher must be reachable off a real juggle; got %s"
+			% (_player.combat.attack.id if _player.combat.attack != null
+				else &"nothing"))
+
+	await _frames(16)
+
+	var total_damage: float = start_health - _dummy.health
+	_check.assert_gt(total_damage, 45.0,
+		"a launcher, a three-hit aerial string and the finisher should be "
+			+ "heavy; total damage was %.1f" % total_damage)
+	_check.assert_ge(float(_player.combat.combo_length), 5.0,
+		"the whole route must read as ONE combo; got %d"
+			% _player.combat.combo_length)
+
+
+## `HitReaction.float_frames` and `float_gravity_scale` actually govern the float.
+##
+## THE BUG THIS EXISTS FOR: they did not. Both fields were authored, validated by
+## the bootstrap and written into `launch.tres`, and NOTHING anywhere read
+## either one. `Actor._apply_gravity` applied a hardcoded 0.45 for the whole
+## LAUNCHED state instead. A designer retuning launch float in the data got no
+## change and no error — the `src/` ⟂ `data/` violation the architecture rules
+## exist to forbid (docs/ARCHITECTURE.md): content that looks authorable while
+## the real value lives in a script.
+##
+## Nothing else could see it. The aerial chain passes with the hardcoded
+## constant too — verified by putting it back — because 0.45 and the authored
+## 0.30 both keep the victim airborne long enough. Dead data does not fail, it
+## just quietly ignores you, which is why this is asserted on the PHYSICS and
+## not on an outcome.
+##
+## Asserts the RELATIONSHIP rather than a number, so retuning any of the three
+## inputs cannot make it wrong: one float frame must change the victim's
+## vertical velocity by exactly `gravity * fall_gravity_scale *
+## float_gravity_scale * dt`. A hardcoded multiplier fails this for any authored
+## value that is not coincidentally identical to it.
+func _test_launch_float_is_data_driven() -> void:
+	_reset()
+	await _frames(6)
+
+	_press_with_direction(CombatAction.Id.PUNCH, Vector2(0.0, -1.0))
+	await _frames(14)
+
+	var dummy_combat: CombatComponent = _dummy.combat
+	_check.assert_gt(float(dummy_combat.float_frames_left), 0.0,
+		"the launch must arm the authored float; if this is 0 the reaction's "
+			+ "float_frames never reached the component at all")
+	_check.assert_lt(dummy_combat.float_gravity_scale, 1.0,
+		"the component must carry the reaction's authored float scale, not 1.0")
+
+	# Two consecutive float frames, clear of hitstop and of the floor, so the
+	# only thing acting on velocity.y is gravity.
+	while dummy_combat.hitstop_remaining > 0:
+		await get_tree().physics_frame
+
+	var before: float = _dummy.velocity.y
+	var frames_at_start: int = dummy_combat.float_frames_left
+	await get_tree().physics_frame
+	var after: float = _dummy.velocity.y
+
+	if frames_at_start <= 1 or _dummy.is_on_floor():
+		_check.assert_true(false,
+			"the measurement window closed before it could be taken — the "
+				+ "float is too short or the victim landed")
+		return
+
+	var gravity: float = float(ProjectSettings.get_setting(
+		"physics/3d/default_gravity", 24.0))
+
+	# Gravity here is asymmetric by design — a floatier rise, a snappier fall —
+	# so the expectation has to pick the same side of that split the actor is on.
+	# A launched victim is in fact RISING for the whole float: 5.8 m/s upward
+	# against 24 x 0.82 x 0.30 needs about 59 frames to reach apex and the float
+	# lasts 30, so there is no falling-during-float window to measure in. The
+	# asymmetry is not what this case is about; the float multiplier is.
+	var directional: float = _dummy.profile.rise_gravity_scale if before > 0.0 \
+		else _dummy.profile.fall_gravity_scale
+	var expected: float = gravity * directional \
+		* dummy_combat.float_gravity_scale * CombatClock.TICK_DELTA
+
+	_check.assert_almost_eq(before - after, expected, 0.01,
+		"one float frame must slow the victim by exactly the AUTHORED rate "
+			+ "(gravity %.1f x directional %.2f x float %.2f x dt); measured "
+				% [gravity, directional, dummy_combat.float_gravity_scale]
+			+ "%.4f, expected %.4f. A mismatch means the float multiplier is "
+				% [before - after, expected]
+			+ "coming from a constant in the code rather than from the reaction.")
+
+
+## The visual model faces the same way the actor logically does.
+##
+## THE BUG THIS EXISTS FOR: the imported character mesh faces +Z while this
+## project (and Godot) treat -Z as forward. The actor moved correctly, faced
+## correctly, and its hitboxes landed correctly — but the BODY was turned
+## around, so it moonwalked. Every control read as inverted, and the jump
+## animation played forward while the character travelled backward.
+##
+## Nothing in the existing suites could see it: the movement maths was provably
+## right and the hits provably landed. The defect lived entirely in the mesh's
+## orientation, which no test was looking at.
+##
+## Measured from the REST POSE — the toe sits forward of the ankle in any
+## humanoid rig — so this needs no animation, no AnimationMixer pump and no
+## idle frames. An earlier attempt sampled the striking hand mid-punch and
+## always read the bind pose instead, reporting the same value whether the
+## model was right or wrong: a check that cannot fail is worse than no check.
+func _test_model_faces_forward() -> void:
+	# Reset first: the preceding case holds BACK to reach the launcher, which
+	# leaves the player rotated. Measuring against a stale facing compares the
+	# model to the wrong axis and reports a failure that is purely leakage from
+	# another test.
+	_reset()
+	await _frames(2)
+
+	var skeleton: Skeleton3D = _find_skeleton(_player)
+	_check.assert_not_null(skeleton, "the player should have a Skeleton3D")
+	if skeleton == null:
+		return
+
+	var ankle: int = skeleton.find_bone("DEF-foot.L")
+	var toe: int = skeleton.find_bone("DEF-toe.L")
+	_check.assert_true(ankle >= 0 and toe >= 0,
+		"expected the Rigify DEF- bone names on the rig")
+	if ankle < 0 or toe < 0:
+		return
+
+	var model: Node3D = _player.get_node_or_null("Model") as Node3D
+	_check.assert_not_null(model, "the player should have a Model node")
+	if model == null:
+		return
+
+	# The anatomical forward of the mesh, in the skeleton's own space: in any
+	# humanoid rest pose the toe sits forward of the ankle.
+	var anatomical_forward: Vector3 = (
+		skeleton.get_bone_global_rest(toe).origin
+		- skeleton.get_bone_global_rest(ankle).origin)
+	anatomical_forward.y = 0.0
+
+	# Rotated by the MODEL node's basis, not the skeleton's.
+	#
+	# `Skeleton3D.global_transform` reports IDENTITY here — the child transform
+	# has not propagated in a headless run — so measuring through it silently
+	# ignores the model's rotation and reports the same answer whether the mesh
+	# is right or wrong. The model node's transform is populated, and it is the
+	# node whose orientation is actually under test. (The same stale-transform
+	# trap produced a false reading from Camera3D earlier.)
+	var world_forward: Vector3 = model.global_transform.basis * anatomical_forward
+	var actor_forward: Vector3 = -_player.global_transform.basis.z
+
+	var alignment: float = world_forward.normalized().dot(actor_forward)
+
+	_check.assert_gt(alignment, 0.7,
+		"the model's anatomical forward must align with the actor's forward "
+			+ "axis (alignment %.2f, where 1 is perfect and -1 is fully " % alignment
+			+ "reversed). A negative value means the mesh is turned around: "
+			+ "the actor will moonwalk and every control will read as "
+			+ "inverted, even though the movement maths is correct.")
+
+
+func _find_skeleton(node: Node) -> Skeleton3D:
+	if node is Skeleton3D:
+		return node as Skeleton3D
+	for child: Node in node.get_children():
+		var found: Skeleton3D = _find_skeleton(child)
+		if found != null:
+			return found
+	return null
 
 
 ## Every animation clip referenced anywhere actually exists in the rig.

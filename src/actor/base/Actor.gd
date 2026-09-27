@@ -57,12 +57,21 @@ var move_direction: Vector3 = Vector3.ZERO
 ## Current lock-on / aggro target.
 var target: Actor = null
 
+## How far away an opponent can be and still be the one this actor is FIGHTING,
+## for the purposes of combo routing. Distinct from lock-on range, which is a
+## camera concern and much longer.
+##
+## Generous on purpose: it only decides WHOSE STATE fills the combo context.
+## Edges that care about range gate on `ComboContext.target_distance`, which is
+## reported regardless, so widening this cannot make a distance-gated route
+## fire early.
+const COMBAT_AWARENESS_RANGE: float = 8.0
+
 var _intent: ActorIntent = null
 var _context: ComboContext = ComboContext.new()
 
 var _gravity: float = 24.0
 var _coyote_frames_left: int = 0
-var _jump_buffer_frames_left: int = 0
 var _dash_cooldown_left: int = 0
 var _air_dashes_left: int = 0
 var _dash_direction: Vector3 = Vector3.ZERO
@@ -153,8 +162,6 @@ func _tick_movement_timers() -> void:
 	elif _coyote_frames_left > 0:
 		_coyote_frames_left -= 1
 
-	if _jump_buffer_frames_left > 0:
-		_jump_buffer_frames_left -= 1
 	if _dash_cooldown_left > 0:
 		_dash_cooldown_left -= 1
 
@@ -187,10 +194,24 @@ func _consume_buffered_actions() -> void:
 	if buffer.peek(CombatAction.Id.DASH, now) and _try_dash():
 		buffer.consume(CombatAction.Id.DASH, now)
 
-	if buffer.consume(CombatAction.Id.JUMP, now):
-		_jump_buffer_frames_left = profile.jump_buffer_frames if profile != null else 6
-	if _jump_buffer_frames_left > 0 and _can_jump():
+	# Jump uses the SAME buffer as everything else, peek-then-consume.
+	#
+	# It used to carry a second buffering mechanism of its own: a countdown
+	# decremented in `_tick_movement_timers`, which aged in WALL frames while
+	# every other buffered input ages on the ACTIONABLE clock that freezes
+	# during hitstop. Two buffers with two notions of time, one of which
+	# nothing else in the project shares, and both feeding the same decision.
+	# It happened to agree with the shared buffer at the timings measured, so
+	# this is not a bug fix — it is the removal of a second source of truth
+	# before it drifts into one.
+	#
+	# The profile's `jump_buffer_frames` survives as the per-actor window, so
+	# a heavy actor can still be given tighter leniency than a nimble one.
+	var jump_window: int = profile.jump_buffer_frames if profile != null \
+		else InputBuffer.NATURAL_WINDOW
+	if buffer.peek(CombatAction.Id.JUMP, now, jump_window) and _can_jump():
 		_jump()
+		buffer.consume(CombatAction.Id.JUMP, now, jump_window)
 
 	# Attacks last: everything above is either defensive or movement, and both
 	# should win a tie against committing to an attack.
@@ -209,10 +230,31 @@ func _build_context() -> ComboContext:
 	_context.frames_since_dash = -1 if _last_dash_frame < 0 \
 		else CombatClock.frame - _last_dash_frame
 
-	if target != null and target.combat != null:
-		_context.target_state = target.combat.as_target_state()
+	# WHO the combo graph considers "the target" is NOT the lock-on target.
+	#
+	# It was, and that quietly broke every route gated on target state. Lock-on
+	# is a camera and steering affordance, set only by an explicit button press;
+	# an opponent's state is a fact about the world. Tying the two together meant
+	# the air-combo finisher — which requires a LAUNCHED target — was unreachable
+	# for any player who had not discovered the lock-on key, with no feedback
+	# explaining why the input did nothing. Worse, the same button produced a
+	# different move depending on a camera toggle.
+	#
+	# Lock-on still WINS when engaged: deliberately fighting one opponent in a
+	# crowd must not have the graph routing off whoever happens to be nearest.
+	# It just no longer gates the context's existence.
+	#
+	# `_local_direction` keeps using the lock-on target and only that, because
+	# "forward means toward the enemy" genuinely IS a steering concern.
+	var context_target: Actor = target
+	if context_target == null:
+		context_target = CombatDirector.nearest_actor(self,
+			COMBAT_AWARENESS_RANGE)
+
+	if context_target != null and context_target.combat != null:
+		_context.target_state = context_target.combat.as_target_state()
 		_context.target_distance = global_position.distance_to(
-			target.global_position)
+			context_target.global_position)
 	else:
 		_context.target_state = CombatTypes.TargetState.NONE
 		_context.target_distance = INF
@@ -354,9 +396,32 @@ func _apply_gravity() -> void:
 		else profile.fall_gravity_scale
 
 	# A launched actor floats longer so an aerial route is executable rather than
-	# frame-perfect.
-	if combat != null and combat.state == CombatState.Id.LAUNCHED:
-		scale *= 0.45
+	# frame-perfect. The multiplier and its duration are AUTHORED on the
+	# reaction; this used to be a hardcoded 0.45 that ignored both, which made
+	# `HitReaction.float_frames` and `float_gravity_scale` dead fields.
+	if combat != null and combat.float_frames_left > 0:
+		scale *= combat.float_gravity_scale
+
+	# A JUGGLE IS A SHARED FALL.
+	#
+	# The attacker gets the same slowed descent while performing an air attack,
+	# and this is the mechanic that makes an aerial string longer than two hits
+	# possible at all. The arithmetic is not close: the aerial route's four
+	# attacks are about 98 frames of frame data before any hitstop, while a
+	# 2.0 m jump is airborne for roughly 36. Without a shared descent the
+	# attacker sinks while the launched victim hangs, so by the finisher the
+	# player is a metre and a half BELOW a target they are diving down at, and
+	# the move that exists to end an air combo can never touch anything.
+	#
+	# DESCENT ONLY — never the rise. Scaling gravity in both directions was
+	# tried first and was wrong: weaker gravity against an upward velocity buys
+	# extra HEIGHT, and the player levitated to 3.5 m mid-string. Hang time and
+	# jump height are different quantities, and an air attack should buy exactly
+	# one of them.
+	if combat != null and velocity.y <= 0.0 and combat.is_attacking() \
+			and combat.attack != null \
+			and combat.attack.stance == CombatTypes.Stance.AIRBORNE:
+		scale *= profile.air_attack_fall_scale
 
 	velocity.y = maxf(velocity.y - _gravity * scale * CombatClock.TICK_DELTA,
 		-profile.max_fall_speed)
@@ -404,9 +469,12 @@ func _can_jump() -> bool:
 
 
 func _jump() -> void:
+	# Order matters: the attack has to be released BEFORE the launch, because
+	# `cancel_for_jump` is a no-op unless an attack is still current.
+	if combat != null:
+		combat.cancel_for_jump()
 	velocity.y = profile.jump_velocity(_gravity)
 	_coyote_frames_left = 0
-	_jump_buffer_frames_left = 0
 
 
 ## Returns true if a dash actually began, so the caller knows whether to spend
@@ -450,12 +518,18 @@ func _on_damage_received(result: HitResult) -> void:
 	apply_damage(result.damage)
 	apply_stagger(result.stagger_damage)
 
-	if result.reaction != null and not result.reaction.launch_velocity.is_zero_approx():
+	if result.reaction == null:
+		return
+
+	if not result.reaction.launch_velocity.is_zero_approx():
+		# A dedicated launcher: replace velocity outright.
 		var away: Vector3 = result.direction
 		away.y = 0.0
 		velocity = away.normalized() * result.reaction.launch_velocity.z \
 			+ Vector3.UP * result.reaction.launch_velocity.y
-	elif result.reaction != null and result.reaction.pushback > 0.0:
+		return
+
+	if result.reaction.pushback > 0.0:
 		var push: Vector3 = result.direction
 		push.y = 0.0
 		velocity.x = push.normalized().x * result.reaction.pushback
@@ -503,7 +577,6 @@ func reset() -> void:
 	velocity = Vector3.ZERO
 	move_direction = Vector3.ZERO
 	_dash_cooldown_left = 0
-	_jump_buffer_frames_left = 0
 	_last_dash_frame = -1
 	_frames_since_stagger_damage = poise_recovery_delay
 	if combat != null:

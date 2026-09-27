@@ -71,6 +71,13 @@ extends Resource
 ## is a major system here, so this sits deliberately high.
 @export_range(0.0, 1.0, 0.05) var air_control: float = 0.72
 
+## Gravity multiplier applied to the attacker's DESCENT while it performs an
+## airborne attack. See `Actor._apply_gravity` for why a juggle needs it and why
+## it must not touch the rise.
+##
+## 1.0 disables the hang, which is correct for an actor with no aerial routes.
+@export_range(0.05, 1.0, 0.01) var air_attack_fall_scale: float = 1.0
+
 ## Terminal downward speed, m/s.
 @export_range(1.0, 100.0, 1.0) var max_fall_speed: float = 32.0
 
