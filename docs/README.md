@@ -15,6 +15,7 @@ each with the milestone that will create it.
 
 | Document | Purpose | Status |
 |---|---|---|
+| [HANDOFF.md](HANDOFF.md) | **Start here.** Project state, standing directives, architecture rules, and where work stands for anyone picking this up cold | ✅ Live |
 | [INITIAL_AUDIT.md](INITIAL_AUDIT.md) | M0 environment + repository audit, risk register, architecture recommendation | ✅ Complete |
 | [TECH_STACK.md](TECH_STACK.md) | The locked technical stack, reasoning, rejected alternatives, change policy | ✅ Locked |
 | [MILESTONES.md](MILESTONES.md) | Roadmap with binding exit criteria per milestone | ✅ Live |
